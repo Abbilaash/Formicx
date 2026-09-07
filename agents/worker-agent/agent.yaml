@@ -1,0 +1,13 @@
+name: worker-agent
+version: 0.1.0
+
+runtime:
+  language: python
+  framework: custom
+
+entrypoint: main.py
+
+capabilities:
+  - background_task
+
+permissions: []
