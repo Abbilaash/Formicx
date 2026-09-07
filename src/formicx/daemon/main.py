@@ -1,70 +1,58 @@
 from __future__ import annotations
 
+import asyncio
 import signal
 import sys
-import time
-from pathlib import Path
+import uvicorn
 
-from formicx.manifests.loader import load_agent_manifest
+from formicx.config import FORMICX_DAEMON_HOST, FORMICX_DAEMON_PORT
+from formicx.daemon.api import create_daemon_app
 from formicx.runtime.manager import AgentManager
 
 
 class FormicxDaemon:
     """The Formicx runtime daemon (formicxd)."""
 
-    def __init__(self) -> None:
-        self.manager = AgentManager()
-        self._running = False
-        self._setup_signal_handlers()
-
-    def _setup_signal_handlers(self) -> None:
-        def handle_signal(signum, frame):
-            print(f"\n[formicxd] Signal {signum} received. Initiating graceful shutdown...")
-            self.stop()
-
-        signal.signal(signal.SIGINT, handle_signal)
-        signal.signal(signal.SIGTERM, handle_signal)
-
-    def load_and_start_manifest(self, manifest_path: str | Path) -> str:
-        """Load an agent manifest, register it, and start the agent process.
-
-        Args:
-            manifest_path: Path to the agent.yaml file.
-
-        Returns:
-            The agent_id of the started Agent.
-        """
-        agent = load_agent_manifest(manifest_path)
-        self.manager.register_agent(agent)
-        self.manager.start_agent(agent.agent_id)
-        print(f"[formicxd] Started Agent '{agent.name}' [{agent.agent_id}] entrypoint='{agent.entrypoint}'")
-        return agent.agent_id
+    def __init__(
+        self,
+        host: str = FORMICX_DAEMON_HOST,
+        port: int = FORMICX_DAEMON_PORT,
+        manager: AgentManager | None = None,
+    ) -> None:
+        self.host = host
+        self.port = port
+        self.manager = manager if manager is not None else AgentManager()
+        self.app = create_daemon_app(self.manager)
+        self.server: uvicorn.Server | None = None
 
     def run(self) -> None:
-        """Run the main daemon event loop."""
-        self._running = True
-        print("[formicxd] Formicx Daemon initialized and running.")
+        """Run the Uvicorn server hosting the local control API."""
+        print(f"Formicx daemon started.")
+        print(f"Local control interface available on http://{self.host}:{self.port}")
+        print(f"Listening on localhost only.")
+
+        config = uvicorn.Config(
+            app=self.app,
+            host=self.host,
+            port=self.port,
+            log_level="info",
+        )
+        self.server = uvicorn.Server(config)
+
         try:
-            while self._running:
-                self.manager.refresh_all_statuses()
-                time.sleep(1.0)
-        except KeyboardInterrupt:
-            print("\n[formicxd] KeyboardInterrupt caught.")
+            self.server.run()
         finally:
             self.stop()
 
     def stop(self) -> None:
-        """Stop the daemon and terminate all managed child processes."""
-        if not self._running:
-            return
-        self._running = False
-        print("[formicxd] Shutting down all managed agent processes...")
+        """Stop all managed agent child processes and shutdown daemon."""
+        print("\n[formicxd] Shutting down all managed agent processes...")
         self.manager.shutdown_all()
         print("[formicxd] Formicx Daemon stopped cleanly.")
 
 
 def main() -> None:
-    """CLI entrypoint for running the Formicx daemon."""
+    """CLI entrypoint for formicxd binary."""
     daemon = FormicxDaemon()
     daemon.run()
 

@@ -53,8 +53,11 @@ def test_concurrent_agents_execution_and_failure_isolation(repo_root: Path):
         assert hello_agt.status == AgentStatus.STOPPED
         assert manager.process_manager.is_running(worker_agt.agent_id)
 
-        # 4. Wait for failing-agent process to exit cleanly (sleep 0.5s > 0.3s)
-        time.sleep(0.6)
+        # 4. Wait for failing-agent process to exit cleanly
+        for _ in range(20):
+            if not manager.process_manager.is_running(failing_agt.agent_id):
+                break
+            time.sleep(0.1)
 
         # 5. Refresh statuses and verify failure isolation:
         # failing-agent must be FAILED, worker-agent must remain RUNNING

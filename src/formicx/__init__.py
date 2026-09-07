@@ -1,12 +1,18 @@
 from __future__ import annotations
 
+from formicx.client import (
+    DaemonAPIError,
+    DaemonClient,
+    DaemonClientError,
+    DaemonUnavailableError,
+)
 from formicx.daemon import FormicxDaemon
 from formicx.enums import AgentStatus, MessageType, NodeStatus
 from formicx.manifests import load_agent_manifest
 from formicx.models import Agent, AgentRuntime, Message, Node, NodeResources, Service, Team
 from formicx.runtime import AgentManager, AgentRegistry, ProcessHandle, ProcessManager
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = [
     "Agent",
@@ -25,4 +31,8 @@ __all__ = [
     "ProcessHandle",
     "ProcessManager",
     "FormicxDaemon",
+    "DaemonClient",
+    "DaemonClientError",
+    "DaemonUnavailableError",
+    "DaemonAPIError",
 ]
