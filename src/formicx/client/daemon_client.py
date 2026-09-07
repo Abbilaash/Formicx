@@ -36,10 +36,13 @@ class DaemonClient:
 
     def __init__(
         self,
-        base_url: str = FORMICX_DAEMON_URL,
+        base_url: Optional[str] = None,
         timeout: float = 10.0,
         http_client: Optional[httpx.Client] = None,
     ) -> None:
+        import os
+        if base_url is None:
+            base_url = os.getenv("FORMICX_DAEMON_URL", FORMICX_DAEMON_URL)
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self._custom_client = http_client
@@ -105,3 +108,60 @@ class DaemonClient:
     def restart_agent(self, identifier: str) -> Dict[str, Any]:
         """Restart a registered agent."""
         return self._request("POST", f"/v1/agents/{identifier}/restart")
+
+    def send_message(
+        self,
+        sender: str,
+        recipient: str,
+        message_type: str,
+        payload: Dict[str, Any],
+        correlation_id: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Send a message via the formicxd daemon."""
+        data = {
+            "sender": sender,
+            "recipient": recipient,
+            "message_type": message_type,
+            "payload": payload,
+            "correlation_id": correlation_id,
+        }
+        return self._request("POST", "/v1/messages", json_data=data)
+
+    def get_inbox(
+        self, identifier: str, history: bool = False
+    ) -> List[Dict[str, Any]]:
+        """Inspect pending messages or history for an agent's inbox."""
+        path = f"/v1/agents/{identifier}/messages"
+        if history:
+            path += "?history=true"
+        return self._request("GET", path)
+
+    def receive_next_message(
+        self, identifier: str, timeout: Optional[float] = None
+    ) -> Optional[Dict[str, Any]]:
+        """Consume the next pending message for an agent."""
+        path = f"/v1/agents/{identifier}/messages/next"
+        if timeout is not None:
+            path += f"?timeout={timeout}"
+        client = self._get_client()
+        url = f"{self.base_url}{path}"
+        try:
+            response = client.get(url)
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.NetworkError) as exc:
+            raise DaemonUnavailableError() from exc
+        except httpx.HTTPError as exc:
+            raise DaemonClientError(f"HTTP communication error: {exc}") from exc
+
+        if response.status_code == 204:
+            return None
+
+        if response.is_error:
+            try:
+                data = response.json()
+                detail = data.get("detail", response.text)
+            except Exception:
+                detail = response.text
+            raise DaemonAPIError(detail)
+
+        return response.json()
+

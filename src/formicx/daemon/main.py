@@ -5,6 +5,7 @@ import signal
 import sys
 import uvicorn
 
+from formicx.communication.service import CommunicationService
 from formicx.config import FORMICX_DAEMON_HOST, FORMICX_DAEMON_PORT
 from formicx.daemon.api import create_daemon_app
 from formicx.runtime.manager import AgentManager
@@ -18,11 +19,17 @@ class FormicxDaemon:
         host: str = FORMICX_DAEMON_HOST,
         port: int = FORMICX_DAEMON_PORT,
         manager: AgentManager | None = None,
+        comm_service: CommunicationService | None = None,
     ) -> None:
         self.host = host
         self.port = port
         self.manager = manager if manager is not None else AgentManager()
-        self.app = create_daemon_app(self.manager)
+        self.comm_service = (
+            comm_service
+            if comm_service is not None
+            else CommunicationService(registry=self.manager.registry)
+        )
+        self.app = create_daemon_app(self.manager, comm_service=self.comm_service)
         self.server: uvicorn.Server | None = None
 
     def run(self) -> None:

@@ -48,12 +48,20 @@ class ProcessManager:
     def __init__(self) -> None:
         self._handles: Dict[str, ProcessHandle] = {}
 
-    def start_process(self, agent_id: str, entrypoint: str | Path) -> ProcessHandle:
+    def start_process(
+        self,
+        agent_id: str,
+        entrypoint: str | Path,
+        agent_name: Optional[str] = None,
+        env: Optional[Dict[str, str]] = None,
+    ) -> ProcessHandle:
         """Start an Agent as an independent OS subprocess.
 
         Args:
             agent_id: The unique identifier of the Agent.
             entrypoint: Path to the Python entrypoint script.
+            agent_name: Optional display name of the Agent.
+            env: Optional custom environment variable dictionary.
 
         Returns:
             The created ProcessHandle.
@@ -70,11 +78,23 @@ class ProcessManager:
         if not entrypoint_path.is_file():
             raise FileNotFoundError(f"Entrypoint script not found: {entrypoint_path}")
 
+        import os
+        proc_env = os.environ.copy()
+        src_path = str(Path(__file__).resolve().parent.parent.parent)
+        existing_pp = proc_env.get("PYTHONPATH", "")
+        proc_env["PYTHONPATH"] = f"{src_path}{os.pathsep}{existing_pp}" if existing_pp else src_path
+        proc_env["FORMICX_AGENT_ID"] = agent_id
+        if agent_name:
+            proc_env["FORMICX_AGENT_NAME"] = agent_name
+        if env:
+            proc_env.update(env)
+
         proc = subprocess.Popen(
             [sys.executable, str(entrypoint_path)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=str(entrypoint_path.parent),
+            env=proc_env,
         )
 
         handle = ProcessHandle(

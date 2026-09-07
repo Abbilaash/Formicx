@@ -86,7 +86,9 @@ class AgentManager:
         agent.status = AgentStatus.STARTING
 
         try:
-            self.process_manager.start_process(agent_id, agent.entrypoint)
+            self.process_manager.start_process(
+                agent_id, agent.entrypoint, agent_name=agent.name
+            )
             agent.status = AgentStatus.RUNNING
         except Exception:
             agent.status = AgentStatus.FAILED

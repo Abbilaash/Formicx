@@ -1,0 +1,9 @@
+name: coordinator-agent
+version: 1.0.0
+runtime:
+  language: python
+  framework: custom
+entrypoint: main.py
+capabilities:
+  - coordination
+  - message-handling

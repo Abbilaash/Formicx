@@ -8,16 +8,61 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 2 Complete
+## Current Status — Phase 3 Complete
 
-Formicx is currently at **Phase 2 (CLI + Daemon Control Plane)**.
+Formicx is currently at **Phase 3 (Native Agent Communication Layer)**.
 
-Phase 2 adds the developer-facing CLI (`formicx`) communicating over a local loopback HTTP control interface (`http://127.0.0.1:8765`) to the runtime daemon (`formicxd`).
+Phase 3 adds native inter-agent communication, in-memory thread-safe queues, correlation IDs, agent discovery, transport abstractions (`LocalHTTPTransport`), and the developer SDK (`AgentContext`).
 
-### Control Plane Architecture
+### Communication Architecture
 
 ```text
-formicx CLI ──> DaemonClient ──> FastAPI (127.0.0.1:8765) ──> formicxd ──> AgentManager ──> OS Processes
+Agent A ──> AgentContext (SDK) ──> LocalHTTPTransport ──> formicxd Communication API ──> MessageRouter ──> Target Inbox ──> Agent B
+```
+
+---
+
+## Agent SDK Usage
+
+Agents running as independent OS processes communicate natively via `AgentContext`:
+
+```python
+from formicx.sdk import AgentContext
+
+# Automatically inherits identity from Formicx runtime environment
+context = AgentContext()
+
+# Send a request message to another agent
+res = context.send(
+    to="research-agent",
+    payload={"question": "What is the capital of France?"},
+    message_type="REQUEST",
+)
+
+# Receive a correlated response (blocking or timed poll)
+msg = context.receive(timeout=5.0)
+if msg:
+    print(f"Received answer from {msg.sender}: {msg.payload}")
+    
+    # Reply to an incoming message
+    context.reply(msg, payload={"status": "ACK"})
+```
+
+---
+
+## CLI Message Commands
+
+Inspect and send messages directly from the terminal:
+
+```bash
+# Send a message manually
+formicx message send coordinator-agent research-agent '{"question":"What is 2+2?"}'
+
+# Inspect unconsumed pending inbox
+formicx message inbox research-agent
+
+# Inspect message history
+formicx message history research-agent
 ```
 
 ---

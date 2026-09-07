@@ -44,5 +44,6 @@ venv.bak/
 # IDEs & Editors
 .vscode/
 .idea/
+.gemini/
 *.swp
 *.swo

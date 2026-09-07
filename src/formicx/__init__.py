@@ -6,13 +6,26 @@ from formicx.client import (
     DaemonClientError,
     DaemonUnavailableError,
 )
+from formicx.communication import (
+    AgentDiscoveryService,
+    AgentInbox,
+    AgentNotFoundError,
+    AmbiguousAgentError,
+    CommunicationError,
+    CommunicationService,
+    InvalidMessageError,
+    MessageDeliveryError,
+    MessageRouter,
+    TransportUnavailableError,
+)
 from formicx.daemon import FormicxDaemon
 from formicx.enums import AgentStatus, MessageType, NodeStatus
 from formicx.manifests import load_agent_manifest
 from formicx.models import Agent, AgentRuntime, Message, Node, NodeResources, Service, Team
 from formicx.runtime import AgentManager, AgentRegistry, ProcessHandle, ProcessManager
+from formicx.sdk import AgentContext
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 __all__ = [
     "Agent",
@@ -35,4 +48,15 @@ __all__ = [
     "DaemonClientError",
     "DaemonUnavailableError",
     "DaemonAPIError",
+    "AgentContext",
+    "CommunicationService",
+    "MessageRouter",
+    "AgentInbox",
+    "AgentDiscoveryService",
+    "CommunicationError",
+    "AgentNotFoundError",
+    "AmbiguousAgentError",
+    "MessageDeliveryError",
+    "InvalidMessageError",
+    "TransportUnavailableError",
 ]
