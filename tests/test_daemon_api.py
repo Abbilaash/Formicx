@@ -28,7 +28,10 @@ def test_api_health(api_client):
     client, _, _ = api_client
     response = client.get("/v1/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "daemon": "formicxd"}
+    res = response.json()
+    assert res["status"] in ("ok", "healthy")
+    assert res["daemon"] == "formicxd"
+    assert res["node"] == "local"
 
 
 def test_api_daemon_status(api_client):

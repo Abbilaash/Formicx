@@ -7,6 +7,7 @@ from formicx.client import (
     DaemonUnavailableError,
 )
 from formicx.communication import (
+    AgentAddress,
     AgentCommunicationPolicy,
     AgentDiscoveryService,
     AgentInbox,
@@ -16,9 +17,14 @@ from formicx.communication import (
     CommunicationError,
     CommunicationPolicyEngine,
     CommunicationService,
+    InvalidAgentAddressError,
     InvalidMessageError,
     MessageDeliveryError,
     MessageRouter,
+    NetworkHTTPTransport,
+    NodeUnavailableError,
+    PeerNode,
+    PeerRegistry,
     TransportUnavailableError,
 )
 from formicx.daemon import FormicxDaemon
@@ -54,6 +60,7 @@ __all__ = [
     "DaemonClientError",
     "DaemonUnavailableError",
     "DaemonAPIError",
+    "AgentAddress",
     "AgentContext",
     "CommunicationService",
     "MessageRouter",
@@ -66,6 +73,12 @@ __all__ = [
     "MessageDeliveryError",
     "InvalidMessageError",
     "TransportUnavailableError",
+    "InvalidAgentAddressError",
+    "NodeUnavailableError",
+    "PeerNode",
+    "PeerRegistry",
+    "NetworkHTTPTransport",
     "AgentCommunicationPolicy",
     "CommunicationPolicyEngine",
 ]
+

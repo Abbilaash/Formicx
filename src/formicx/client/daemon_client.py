@@ -174,4 +174,19 @@ class DaemonClient:
         params = f"?source={source}&destination={destination}"
         return self._request("GET", f"/v1/policies/check{params}")
 
+    # --- Phase 6 Distributed Agent Networking Client Methods ---
+
+    def get_node_info(self) -> Dict[str, Any]:
+        """Get local Formicx node details."""
+        return self._request("GET", "/v1/node/info")
+
+    def list_peers(self) -> List[Dict[str, Any]]:
+        """List all registered remote peer nodes."""
+        return self._request("GET", "/v1/node/peers")
+
+    def ping_peer(self, peer_name: str) -> Dict[str, Any]:
+        """Ping a remote peer node to check status and latency."""
+        return self._request("GET", f"/v1/node/ping/{peer_name}")
+
+
 

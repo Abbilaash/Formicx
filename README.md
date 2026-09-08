@@ -8,55 +8,78 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 5 Complete
+## Current Status — Phase 6 Complete
 
-Formicx is currently at **Phase 5 (Agent Communication Policies)**.
+Formicx is currently at **Phase 6 (Distributed Agent Networking)**.
 
-Phase 5 introduces directional agent-to-agent communication policy enforcement. By default, communication remains open (`allow_all`). Developers can configure directional policies restricting sender agents to explicitly allowed target agents, enforce isolated agents (`allow: []`), perform policy-filtered broadcasts, enforce reply authorization, and inspect policy configurations via `formicx policy` CLI commands.
+Phase 6 introduces inter-node distributed agent messaging across separate machines (Laptops, Raspberry Pis, Cloud Servers). Agents communicate using qualified addresses (`agent-name@node-name`) while maintaining unified SDK primitives (`self.send()`), peer node registries, network HTTP transport routing, authoritative remote communication policy enforcement, and `formicx node` CLI management tools.
 
 ---
 
 ## High-Level Agent SDK Usage
 
-Creating an autonomous Formicx agent requires minimal boilerplate:
+Creating an autonomous Formicx agent with local or distributed communication requires minimal boilerplate:
 
 ```python
-from formicx import Agent, CommunicationDeniedError
+from formicx import Agent, CommunicationDeniedError, NodeUnavailableError
 
 
-class EchoAgent(Agent):
+class CoordinatorAgent(Agent):
 
     def on_start(self):
         print(f"[{self.name}] Agent started with ID {self.id}")
 
+        # Send local message
+        self.send(to="research-agent", payload={"task": "local_search"})
+
+        try:
+            # Send distributed message to an agent on a remote node
+            self.send(
+                to="vision-agent@raspberry-pi",
+                payload={"task": "analyze_camera_feed"},
+            )
+        except NodeUnavailableError:
+            print(f"[{self.name}] Remote node 'raspberry-pi' is offline or unknown.")
+        except CommunicationDeniedError as e:
+            print(f"[{self.name}] Inter-node communication blocked by policy: {e}")
+
     def on_message(self, message):
         print(f"[{self.name}] Received message from {message.sender}: {message.payload}")
 
-        try:
-            # Reply helper (auto-sets recipient, RESPONSE type, and correlation_id)
-            self.reply(
-                message,
-                {
-                    "echo": message.payload,
-                    "status": "success",
-                },
-            )
-        except CommunicationDeniedError as e:
-            print(f"[{self.name}] Reply blocked by policy: {e}")
-
-    def on_stop(self):
-        print(f"[{self.name}] Agent shutting down.")
+        self.reply(message, {"status": "success", "echo": message.payload})
 
 
 if __name__ == "__main__":
-    EchoAgent().run()
+    CoordinatorAgent().run()
+```
+
+---
+
+## Distributed Node & Peer Configuration (`formicx.yaml`)
+
+Configure node identity and peer network definitions:
+
+```yaml
+node:
+  name: laptop
+  host: 0.0.0.0
+  port: 8765
+
+peers:
+  raspberry-pi:
+    host: 192.168.1.50
+    port: 8000
+
+  home-server:
+    host: 192.168.1.60
+    port: 9000
 ```
 
 ---
 
 ## Agent Communication Policies
 
-Configure policies in `formicx.yaml` or daemon configuration to restrict communication topically:
+Configure policies in `formicx.yaml` or daemon configuration to restrict local and remote communication:
 
 ```yaml
 agent_policies:
@@ -67,70 +90,51 @@ agent_policies:
 
   research-agent:
     allow:
+      - vision-agent@raspberry-pi
       - web-agent
-      - summarizer-agent
 
   isolated-agent:
     allow: []
 ```
 
-### Key Policy Rules:
-1. **Default Open:** If no policy exists for an agent, it can communicate with any destination.
-2. **Sender-based Directional Enforcement:** Restricts the sender agent. Allowing `A -> B` does not imply `B -> A`.
-3. **Authoritative Enforcement:** Evaluated in the daemon/message router before inbox delivery.
-4. **Broadcast Filtering:** Skips unpermitted recipients without failing the entire broadcast.
+### Key Policy & Networking Rules:
+1. **Unified Addressing:** Local addresses (`"agent-a"`) and qualified distributed addresses (`"agent-a@node-b"`) use identical SDK method calls (`self.send()`).
+2. **Authoritative Enforcement:** Remote messages received over HTTP are validated against local policies before inbox delivery.
+3. **Peer Node Management:** In-memory registry maps remote node names to target IP hosts and ports.
 
 ---
 
-## Agent Project Creation & Validation CLI
+## CLI Node & Peer Commands
 
-Developers can quickly scaffold and validate new agent projects:
+Inspect local node details and manage remote peers from the terminal:
 
 ```bash
-# 1. Create a new agent project from template
-formicx agent create my-agent
+# Display local node details
+formicx node info
 
-# 2. Validate agent manifest and python syntax statically
-formicx agent validate ./my-agent
+# List known remote peer nodes
+formicx node peers
 
-# 3. Register and start agent with formicxd daemon
-formicx agent register ./my-agent
-formicx agent start my-agent
+# Ping remote peer node health endpoint
+formicx node ping raspberry-pi
+# ONLINE Ping to peer 'raspberry-pi' (192.168.1.50:8000) succeeded in 4.25 ms.
 ```
 
 ---
 
-## CLI Policy Commands
+## CLI Policy & Message Commands
 
-Inspect policy rules and check agent communication permissions from the terminal:
+Inspect policy rules and send debug messages directly from the terminal:
 
 ```bash
-# List all configured agent policies
+# List configured agent policies
 formicx policy list
 
-# Check if communication between source and destination is allowed
-formicx policy check whatsapp-agent mail-agent
-# ALLOWED
+# Check communication permissions
+formicx policy check whatsapp-agent vision-agent@raspberry-pi
 
-formicx policy check whatsapp-agent research-agent
-# DENIED: whatsapp-agent is not permitted to communicate with research-agent
-```
-
----
-
-## CLI Message Commands
-
-Inspect and send messages directly from the terminal:
-
-```bash
-# Send a message manually
-formicx message send coordinator-agent research-agent '{"question":"What is 2+2?"}'
-
-# Inspect unconsumed pending inbox
-formicx message inbox research-agent
-
-# Inspect message history
-formicx message history research-agent
+# Send a message to a remote agent
+formicx message send coordinator-agent vision-agent@raspberry-pi '{"task":"analyze"}'
 ```
 
 ---
@@ -159,7 +163,7 @@ In Terminal 1:
 formicxd
 ```
 
-### 2. Manage Agents with the CLI
+### 2. Manage Agents & Nodes with the CLI
 
 In Terminal 2:
 
@@ -168,21 +172,15 @@ In Terminal 2:
 formicx daemon health
 formicx daemon status
 
+# Check local node and peers
+formicx node info
+formicx node peers
+
 # Register an agent
 formicx agent register ./agents/hello-agent
 
 # Start an agent process
 formicx agent start hello-agent
-
-# List registered agents
-formicx agent list
-
-# Inspect detailed status
-formicx agent status hello-agent
-
-# Inspect communication policies
-formicx policy list
-formicx policy check hello-agent worker-agent
 
 # Stop an agent process
 formicx agent stop hello-agent
@@ -197,6 +195,7 @@ Access CLI documentation globally or per command group:
 ```bash
 formicx --help
 formicx agent --help
+formicx node --help
 formicx policy --help
 formicx message --help
 formicx daemon --help
@@ -230,7 +229,8 @@ formicx/
 │   │   ├── phase2-control-plane.md
 │   │   ├── phase3-communication.md
 │   │   ├── phase4-agent-sdk.md
-│   │   └── phase5-communication-policies.md
+│   │   ├── phase5-communication-policies.md
+│   │   └── phase6-distributed-networking.md
 │   └── specifications/
 │       ├── agent.md
 │       ├── agent-manifest.md
@@ -253,7 +253,10 @@ formicx/
 │       ├── runtime/
 │       ├── communication/
 │       │   ├── __init__.py
+│       │   ├── address.py
 │       │   ├── exceptions.py
+│       │   ├── network_transport.py
+│       │   ├── peer.py
 │       │   ├── policy.py
 │       │   ├── router.py
 │       │   ├── service.py
@@ -277,12 +280,14 @@ formicx/
 │               ├── agent.py
 │               ├── daemon.py
 │               ├── message.py
+│               ├── node.py
 │               └── policy.py
 ├── examples/
 │   ├── phase0_demo.py
 │   ├── runtime_demo.py
 │   ├── phase2_cli_demo.md
-│   └── sdk_demo.py
+│   ├── sdk_demo.py
+│   └── distributed_demo.py
 └── tests/
     ├── test_agent.py
     ├── test_message.py
@@ -305,7 +310,12 @@ formicx/
     ├── test_agent_sdk.py
     ├── test_communication_policy.py
     ├── test_cli_policy.py
-    └── test_phase5_integration.py
+    ├── test_phase5_integration.py
+    ├── test_agent_address.py
+    ├── test_peer_registry.py
+    ├── test_network_routing.py
+    ├── test_cli_node.py
+    └── test_phase6_integration.py
 ```
 
 ---
@@ -313,4 +323,5 @@ formicx/
 ## License
 
 Formicx is released under the [MIT License](LICENSE).
+
 

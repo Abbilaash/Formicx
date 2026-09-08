@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import signal
 import sys
 import uvicorn
 
+from formicx.communication.peer import PeerRegistry
 from formicx.communication.service import CommunicationService
 from formicx.config import FORMICX_DAEMON_HOST, FORMICX_DAEMON_PORT
 from formicx.daemon.api import create_daemon_app
@@ -18,25 +20,40 @@ class FormicxDaemon:
         self,
         host: str = FORMICX_DAEMON_HOST,
         port: int = FORMICX_DAEMON_PORT,
+        node_name: str | None = None,
         manager: AgentManager | None = None,
         comm_service: CommunicationService | None = None,
+        peer_registry: PeerRegistry | None = None,
     ) -> None:
         self.host = host
         self.port = port
+        self.node_name = node_name or os.getenv("FORMICX_NODE_NAME", "local")
         self.manager = manager if manager is not None else AgentManager()
+        self.peer_registry = peer_registry if peer_registry is not None else PeerRegistry()
+
         self.comm_service = (
             comm_service
             if comm_service is not None
-            else CommunicationService(registry=self.manager.registry)
+            else CommunicationService(
+                registry=self.manager.registry,
+                local_node_name=self.node_name,
+                peer_registry=self.peer_registry,
+            )
         )
-        self.app = create_daemon_app(self.manager, comm_service=self.comm_service)
+
+        self.app = create_daemon_app(
+            self.manager,
+            comm_service=self.comm_service,
+            node_name=self.node_name,
+            node_host=self.host,
+            node_port=self.port,
+        )
         self.server: uvicorn.Server | None = None
 
     def run(self) -> None:
         """Run the Uvicorn server hosting the local control API."""
-        print(f"Formicx daemon started.")
-        print(f"Local control interface available on http://{self.host}:{self.port}")
-        print(f"Listening on localhost only.")
+        print(f"Formicx daemon started (Node: '{self.node_name}').")
+        print(f"Control & networking interface available on http://{self.host}:{self.port}")
 
         config = uvicorn.Config(
             app=self.app,

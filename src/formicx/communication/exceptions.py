@@ -34,3 +34,14 @@ class CommunicationDeniedError(CommunicationError):
     """Raised when an agent attempts to communicate with a destination prohibited by policy."""
     pass
 
+
+class NodeUnavailableError(CommunicationError):
+    """Raised when a remote Formicx node is offline, unreachable, or unknown."""
+    pass
+
+
+class InvalidAgentAddressError(CommunicationError):
+    """Raised when an agent address format is invalid."""
+    pass
+
+
