@@ -1,0 +1,8 @@
+name: ${AGENT_NAME}
+version: 0.1.0
+
+runtime:
+  language: python
+  framework: custom
+
+entrypoint: agent.py

@@ -1,0 +1,7 @@
+import pytest
+from agent import ${AGENT_CLASS_NAME}
+
+
+def test_${AGENT_SNAKE_NAME}_instantiation():
+    agent = ${AGENT_CLASS_NAME}(agent_name="${AGENT_NAME}")
+    assert agent.name == "${AGENT_NAME}"

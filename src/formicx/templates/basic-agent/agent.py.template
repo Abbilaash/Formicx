@@ -1,0 +1,25 @@
+from formicx import Agent
+
+
+class ${AGENT_CLASS_NAME}(Agent):
+    """${AGENT_NAME} implementation using Formicx Agent Base Class."""
+
+    def on_start(self):
+        print(f"[{self.name}] Agent started successfully")
+
+    def on_message(self, message):
+        print(f"[{self.name}] Received message from {message.sender}: {message.payload}")
+        self.reply(
+            message,
+            {
+                "status": "completed",
+                "echo": message.payload,
+            },
+        )
+
+    def on_stop(self):
+        print(f"[{self.name}] Agent shutting down")
+
+
+if __name__ == "__main__":
+    ${AGENT_CLASS_NAME}().run()

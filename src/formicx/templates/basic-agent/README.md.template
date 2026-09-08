@@ -1,0 +1,19 @@
+# ${AGENT_NAME}
+
+A Formicx autonomous agent created with the Formicx Agent SDK.
+
+## Quickstart
+
+```bash
+# 1. Validate project structure
+formicx agent validate .
+
+# 2. Register agent with formicxd daemon
+formicx agent register .
+
+# 3. Start the agent
+formicx agent start ${AGENT_NAME}
+
+# 4. Check agent status
+formicx agent status ${AGENT_NAME}
+```

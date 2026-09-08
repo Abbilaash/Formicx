@@ -8,44 +8,63 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 3 Complete
+## Current Status — Phase 4 Complete
 
-Formicx is currently at **Phase 3 (Native Agent Communication Layer)**.
+Formicx is currently at **Phase 4 (Agent SDK + Developer Experience)**.
 
-Phase 3 adds native inter-agent communication, in-memory thread-safe queues, correlation IDs, agent discovery, transport abstractions (`LocalHTTPTransport`), and the developer SDK (`AgentContext`).
+Phase 4 introduces the high-level `Agent` base class, lifecycle hooks (`on_start`, `on_message`, `on_error`, `on_stop`), automatic background polling loops, project scaffolding (`formicx agent create`), static validation (`formicx agent validate`), and streamlined developer experiences.
 
-### Communication Architecture
+---
 
-```text
-Agent A ──> AgentContext (SDK) ──> LocalHTTPTransport ──> formicxd Communication API ──> MessageRouter ──> Target Inbox ──> Agent B
+## High-Level Agent SDK Usage
+
+Creating an autonomous Formicx agent requires minimal boilerplate:
+
+```python
+from formicx import Agent
+
+
+class EchoAgent(Agent):
+
+    def on_start(self):
+        print(f"[{self.name}] Agent started with ID {self.id}")
+
+    def on_message(self, message):
+        print(f"[{self.name}] Received message from {message.sender}: {message.payload}")
+
+        # Reply helper (auto-sets recipient, RESPONSE type, and correlation_id)
+        self.reply(
+            message,
+            {
+                "echo": message.payload,
+                "status": "success",
+            },
+        )
+
+    def on_stop(self):
+        print(f"[{self.name}] Agent shutting down.")
+
+
+if __name__ == "__main__":
+    EchoAgent().run()
 ```
 
 ---
 
-## Agent SDK Usage
+## Agent Project Creation & Validation CLI
 
-Agents running as independent OS processes communicate natively via `AgentContext`:
+Developers can quickly scaffold and validate new agent projects:
 
-```python
-from formicx.sdk import AgentContext
+```bash
+# 1. Create a new agent project from template
+formicx agent create my-agent
 
-# Automatically inherits identity from Formicx runtime environment
-context = AgentContext()
+# 2. Validate agent manifest and python syntax statically
+formicx agent validate ./my-agent
 
-# Send a request message to another agent
-res = context.send(
-    to="research-agent",
-    payload={"question": "What is the capital of France?"},
-    message_type="REQUEST",
-)
-
-# Receive a correlated response (blocking or timed poll)
-msg = context.receive(timeout=5.0)
-if msg:
-    print(f"Received answer from {msg.sender}: {msg.payload}")
-    
-    # Reply to an incoming message
-    context.reply(msg, payload={"status": "ACK"})
+# 3. Register and start agent with formicxd daemon
+formicx agent register ./my-agent
+formicx agent start my-agent
 ```
 
 ---

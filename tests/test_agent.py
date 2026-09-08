@@ -3,7 +3,8 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from formicx import Agent, AgentRuntime, AgentStatus
+from formicx.models import Agent, AgentRuntime
+from formicx.enums import AgentStatus
 
 
 def test_agent_creation_defaults():

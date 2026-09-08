@@ -1,50 +1,47 @@
 import sys
 import time
-from formicx.sdk import AgentContext
+from formicx import Agent
 
 
-def main():
-    context = AgentContext()
-    print(
-        f"[coordinator-agent] Started with identity: ID={context.agent_id}, Name={context.agent_name}"
-    )
-    sys.stdout.flush()
+class CoordinatorAgent(Agent):
+    """Demo Coordinator Agent utilizing Phase 4 Agent Base Class."""
 
-    print("[coordinator-agent] Discovering available agents...")
-    agents = context.discover()
-    print(f"[coordinator-agent] Discovered {len(agents)} agents.")
-    sys.stdout.flush()
+    def on_start(self):
+        print(f"[{self.name}] Started with identity ID={self.id}")
+        sys.stdout.flush()
 
-    target = "research-agent"
-    question = "What is the capital of France?"
+        print(f"[{self.name}] Discovering available agents...")
+        agents = self.discover()
+        print(f"[{self.name}] Discovered {len(agents)} agents.")
+        sys.stdout.flush()
 
-    print(f"[coordinator-agent] Sending REQUEST to '{target}'...")
-    send_res = context.send(
-        to=target,
-        payload={"question": question},
-        message_type="REQUEST",
-    )
-    orig_msg_id = send_res.get("message_id")
-    print(f"[coordinator-agent] Request sent. Message ID: {orig_msg_id}")
-    print("[coordinator-agent] Waiting for response...")
-    sys.stdout.flush()
+        target = "research-agent"
+        question = "What is the capital of France?"
 
-    resp = context.receive(timeout=10.0)
-    if resp:
-        print(f"[coordinator-agent] Response received from sender '{resp.sender}'!")
-        print(f"[coordinator-agent] Response Correlation ID: {resp.correlation_id}")
-        if resp.correlation_id == orig_msg_id:
-            print("[coordinator-agent] Correlation ID verified!")
-        else:
-            print("[coordinator-agent] ERROR: Correlation ID mismatch!")
+        print(f"[{self.name}] Sending REQUEST to '{target}'...")
+        send_res = self.send(
+            to=target,
+            payload={"question": question},
+            message_type="REQUEST",
+        )
+        orig_msg_id = send_res.get("message_id")
+        print(f"[{self.name}] Request sent. Message ID: {orig_msg_id}")
+        print(f"[{self.name}] Waiting for response...")
+        sys.stdout.flush()
 
-        answer = resp.payload.get("answer")
-        print(f"[coordinator-agent] Result: {answer}")
-    else:
-        print("[coordinator-agent] ERROR: Timeout waiting for response.")
+    def on_message(self, message):
+        print(f"[{self.name}] Response received from sender '{message.sender}'!")
+        print(f"[{self.name}] Response Correlation ID: {message.correlation_id}")
+        sys.stdout.flush()
+        answer = message.payload.get("answer") or message.payload.get("echo")
+        print(f"[{self.name}] Result: {answer}")
+        sys.stdout.flush()
+        self.stop()
 
-    sys.stdout.flush()
+    def on_stop(self):
+        print(f"[{self.name}] Coordinator agent task execution finished.")
+        sys.stdout.flush()
 
 
 if __name__ == "__main__":
-    main()
+    CoordinatorAgent().run()
