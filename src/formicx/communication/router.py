@@ -9,19 +9,33 @@ from formicx.models.message import Message
 from formicx.communication.discovery import AgentDiscoveryService
 from formicx.communication.exceptions import (
     AgentNotFoundError,
+    CommunicationDeniedError,
     InvalidMessageError,
     MessageDeliveryError,
 )
 from formicx.communication.inbox import AgentInbox
+from formicx.communication.policy import CommunicationPolicyEngine
 
 
 class MessageRouter:
-    """Routes messages between registered Formicx agents and manages inboxes."""
+    """Routes messages between registered Formicx agents and manages inboxes with policy checks."""
 
-    def __init__(self, discovery: AgentDiscoveryService) -> None:
+    def __init__(
+        self,
+        discovery: AgentDiscoveryService,
+        policy_engine: Optional[CommunicationPolicyEngine] = None,
+    ) -> None:
         self._discovery = discovery
+        self._policy_engine = (
+            policy_engine if policy_engine is not None else CommunicationPolicyEngine(discovery=discovery)
+        )
         self._inboxes: Dict[str, AgentInbox] = {}
         self._lock = threading.Lock()
+
+    @property
+    def policy_engine(self) -> CommunicationPolicyEngine:
+        """Return the policy engine instance."""
+        return self._policy_engine
 
     def get_or_create_inbox(self, agent_id: str) -> AgentInbox:
         """Get or lazily create an AgentInbox for the given agent_id."""
@@ -36,7 +50,7 @@ class MessageRouter:
             return self._inboxes.get(agent_id)
 
     def route(self, message: Message) -> str:
-        """Route a message to its recipient inbox.
+        """Route a message to its recipient inbox if permitted by communication policy.
 
         Args:
             message: The Message instance to route.
@@ -46,7 +60,7 @@ class MessageRouter:
 
         Raises:
             AgentNotFoundError: If sender or recipient cannot be found.
-            AmbiguousAgentError: If recipient name is ambiguous.
+            CommunicationDeniedError: If policy prohibits communication from sender to recipient.
             InvalidMessageError: If message structure is invalid.
         """
         # Validate sender exists in registry
@@ -62,6 +76,13 @@ class MessageRouter:
         message.sender = sender_agent.agent_id
         message.recipient = recipient_agent.agent_id
 
+        # Authoritative policy evaluation
+        if not self._policy_engine.can_communicate(sender_agent.agent_id, recipient_agent.agent_id):
+            raise CommunicationDeniedError(
+                f"CommunicationDeniedError: Agent '{sender_agent.name}' ({sender_agent.agent_id}) "
+                f"is not permitted to communicate with '{recipient_agent.name}' ({recipient_agent.agent_id})."
+            )
+
         # Enqueue into recipient inbox
         inbox = self.get_or_create_inbox(recipient_agent.agent_id)
         inbox.enqueue(message)
@@ -75,7 +96,7 @@ class MessageRouter:
         payload: Dict[str, Any],
         running_only: bool = False,
     ) -> List[str]:
-        """Broadcast a message to all registered agents (except sender).
+        """Broadcast a message to all registered agents allowed by communication policy.
 
         Args:
             sender_identifier: Agent ID or name of sender.
@@ -96,6 +117,10 @@ class MessageRouter:
             if running_only and target.status != AgentStatus.RUNNING:
                 continue
 
+            # Check communication policy for broadcast destination
+            if not self._policy_engine.can_communicate(sender_agent.agent_id, target.agent_id):
+                continue
+
             broadcast_msg = Message(
                 sender=sender_agent.agent_id,
                 recipient=target.agent_id,
@@ -107,3 +132,4 @@ class MessageRouter:
             delivered_recipients.append(target.agent_id)
 
         return delivered_recipients
+

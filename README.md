@@ -8,11 +8,11 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 4 Complete
+## Current Status — Phase 5 Complete
 
-Formicx is currently at **Phase 4 (Agent SDK + Developer Experience)**.
+Formicx is currently at **Phase 5 (Agent Communication Policies)**.
 
-Phase 4 introduces the high-level `Agent` base class, lifecycle hooks (`on_start`, `on_message`, `on_error`, `on_stop`), automatic background polling loops, project scaffolding (`formicx agent create`), static validation (`formicx agent validate`), and streamlined developer experiences.
+Phase 5 introduces directional agent-to-agent communication policy enforcement. By default, communication remains open (`allow_all`). Developers can configure directional policies restricting sender agents to explicitly allowed target agents, enforce isolated agents (`allow: []`), perform policy-filtered broadcasts, enforce reply authorization, and inspect policy configurations via `formicx policy` CLI commands.
 
 ---
 
@@ -21,7 +21,7 @@ Phase 4 introduces the high-level `Agent` base class, lifecycle hooks (`on_start
 Creating an autonomous Formicx agent requires minimal boilerplate:
 
 ```python
-from formicx import Agent
+from formicx import Agent, CommunicationDeniedError
 
 
 class EchoAgent(Agent):
@@ -32,14 +32,17 @@ class EchoAgent(Agent):
     def on_message(self, message):
         print(f"[{self.name}] Received message from {message.sender}: {message.payload}")
 
-        # Reply helper (auto-sets recipient, RESPONSE type, and correlation_id)
-        self.reply(
-            message,
-            {
-                "echo": message.payload,
-                "status": "success",
-            },
-        )
+        try:
+            # Reply helper (auto-sets recipient, RESPONSE type, and correlation_id)
+            self.reply(
+                message,
+                {
+                    "echo": message.payload,
+                    "status": "success",
+                },
+            )
+        except CommunicationDeniedError as e:
+            print(f"[{self.name}] Reply blocked by policy: {e}")
 
     def on_stop(self):
         print(f"[{self.name}] Agent shutting down.")
@@ -48,6 +51,34 @@ class EchoAgent(Agent):
 if __name__ == "__main__":
     EchoAgent().run()
 ```
+
+---
+
+## Agent Communication Policies
+
+Configure policies in `formicx.yaml` or daemon configuration to restrict communication topically:
+
+```yaml
+agent_policies:
+  whatsapp-agent:
+    allow:
+      - mail-agent
+      - calendar-agent
+
+  research-agent:
+    allow:
+      - web-agent
+      - summarizer-agent
+
+  isolated-agent:
+    allow: []
+```
+
+### Key Policy Rules:
+1. **Default Open:** If no policy exists for an agent, it can communicate with any destination.
+2. **Sender-based Directional Enforcement:** Restricts the sender agent. Allowing `A -> B` does not imply `B -> A`.
+3. **Authoritative Enforcement:** Evaluated in the daemon/message router before inbox delivery.
+4. **Broadcast Filtering:** Skips unpermitted recipients without failing the entire broadcast.
 
 ---
 
@@ -65,6 +96,24 @@ formicx agent validate ./my-agent
 # 3. Register and start agent with formicxd daemon
 formicx agent register ./my-agent
 formicx agent start my-agent
+```
+
+---
+
+## CLI Policy Commands
+
+Inspect policy rules and check agent communication permissions from the terminal:
+
+```bash
+# List all configured agent policies
+formicx policy list
+
+# Check if communication between source and destination is allowed
+formicx policy check whatsapp-agent mail-agent
+# ALLOWED
+
+formicx policy check whatsapp-agent research-agent
+# DENIED: whatsapp-agent is not permitted to communicate with research-agent
 ```
 
 ---
@@ -131,6 +180,10 @@ formicx agent list
 # Inspect detailed status
 formicx agent status hello-agent
 
+# Inspect communication policies
+formicx policy list
+formicx policy check hello-agent worker-agent
+
 # Stop an agent process
 formicx agent stop hello-agent
 ```
@@ -144,6 +197,8 @@ Access CLI documentation globally or per command group:
 ```bash
 formicx --help
 formicx agent --help
+formicx policy --help
+formicx message --help
 formicx daemon --help
 formicx help
 ```
@@ -172,7 +227,10 @@ formicx/
 │   ├── architecture/
 │   │   ├── overview.md
 │   │   ├── phase1-runtime.md
-│   │   └── phase2-control-plane.md
+│   │   ├── phase2-control-plane.md
+│   │   ├── phase3-communication.md
+│   │   ├── phase4-agent-sdk.md
+│   │   └── phase5-communication-policies.md
 │   └── specifications/
 │       ├── agent.md
 │       ├── agent-manifest.md
@@ -193,6 +251,13 @@ formicx/
 │       ├── utils/
 │       ├── manifests/
 │       ├── runtime/
+│       ├── communication/
+│       │   ├── __init__.py
+│       │   ├── exceptions.py
+│       │   ├── policy.py
+│       │   ├── router.py
+│       │   ├── service.py
+│       │   └── local_transport.py
 │       ├── daemon/
 │       │   ├── __init__.py
 │       │   ├── main.py
@@ -200,17 +265,24 @@ formicx/
 │       ├── client/
 │       │   ├── __init__.py
 │       │   └── daemon_client.py
+│       ├── sdk/
+│       │   ├── __init__.py
+│       │   ├── agent.py
+│       │   └── context.py
 │       └── cli/
 │           ├── __init__.py
 │           ├── main.py
 │           └── commands/
 │               ├── __init__.py
 │               ├── agent.py
-│               └── daemon.py
+│               ├── daemon.py
+│               ├── message.py
+│               └── policy.py
 ├── examples/
 │   ├── phase0_demo.py
 │   ├── runtime_demo.py
-│   └── phase2_cli_demo.md
+│   ├── phase2_cli_demo.md
+│   └── sdk_demo.py
 └── tests/
     ├── test_agent.py
     ├── test_message.py
@@ -226,7 +298,14 @@ formicx/
     ├── test_daemon_client.py
     ├── test_cli_agent.py
     ├── test_cli_daemon.py
-    └── test_cli_help.py
+    ├── test_cli_help.py
+    ├── test_communication_router.py
+    ├── test_communication_service.py
+    ├── test_cli_message.py
+    ├── test_agent_sdk.py
+    ├── test_communication_policy.py
+    ├── test_cli_policy.py
+    └── test_phase5_integration.py
 ```
 
 ---
@@ -234,3 +313,4 @@ formicx/
 ## License
 
 Formicx is released under the [MIT License](LICENSE).
+

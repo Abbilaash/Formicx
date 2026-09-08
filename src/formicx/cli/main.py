@@ -6,6 +6,7 @@ import typer
 from formicx.cli.commands.agent import agent_app
 from formicx.cli.commands.daemon import daemon_app
 from formicx.cli.commands.message import message_app
+from formicx.cli.commands.policy import policy_app
 
 app = typer.Typer(
     name="formicx",
@@ -17,13 +18,14 @@ app = typer.Typer(
 app.add_typer(agent_app, name="agent")
 app.add_typer(daemon_app, name="daemon")
 app.add_typer(message_app, name="message")
+app.add_typer(policy_app, name="policy")
 
 
 @app.command("help")
 def custom_help(
     topic: Optional[str] = typer.Argument(
         None,
-        help="Optional help topic: 'agent', 'daemon', 'message', or command name.",
+        help="Optional help topic: 'agent', 'daemon', 'message', 'policy', or command name.",
     )
 ) -> None:
     """Display help information and command usage examples.
@@ -33,6 +35,7 @@ def custom_help(
         formicx help agent
         formicx help daemon
         formicx help message
+        formicx help policy
     """
     if topic is None or topic.lower() in ("global", "main"):
         typer.echo("Formicx — Agent Operating Environment\n")
@@ -41,13 +44,14 @@ def custom_help(
         typer.echo("Command Groups:")
         typer.echo("    agent     Manage Formicx agents.")
         typer.echo("    daemon    Inspect the Formicx runtime daemon.")
-        typer.echo("    message   Debug and inspect Formicx agent messages.\n")
+        typer.echo("    message   Debug and inspect Formicx agent messages.")
+        typer.echo("    policy    Inspect Formicx agent communication policies.\n")
         typer.echo("Examples:")
         typer.echo("    formicx agent register ./agents/hello-agent")
         typer.echo("    formicx agent start hello-agent")
         typer.echo("    formicx message send coordinator-agent research-agent '{\"task\":\"hello\"}'")
-        typer.echo("    formicx message inbox research-agent")
-        typer.echo("    formicx daemon status")
+        typer.echo("    formicx policy list")
+        typer.echo("    formicx policy check whatsapp-agent mail-agent")
     elif topic.lower() == "agent":
         typer.echo("Agent Management Commands:\n")
         typer.echo("    register <path>   Register an agent directory or manifest.")
@@ -74,8 +78,16 @@ def custom_help(
         typer.echo("Examples:")
         typer.echo("    formicx message send agent-a agent-b '{\"hello\":\"world\"}'")
         typer.echo("    formicx message inbox agent-b")
+    elif topic.lower() == "policy":
+        typer.echo("Communication Policy Commands:\n")
+        typer.echo("    list              List all configured agent communication policies.")
+        typer.echo("    check <src> <dst> Check if communication from src to dst is allowed.\n")
+        typer.echo("Examples:")
+        typer.echo("    formicx policy list")
+        typer.echo("    formicx policy check whatsapp-agent mail-agent")
     else:
         typer.echo(f"Help topic '{topic}': Run 'formicx {topic} --help' for detailed option usage.")
+
 
 
 if __name__ == "__main__":

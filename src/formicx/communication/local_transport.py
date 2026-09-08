@@ -10,6 +10,7 @@ from formicx.models.message import Message
 from formicx.communication.exceptions import (
     AgentNotFoundError,
     AmbiguousAgentError,
+    CommunicationDeniedError,
     InvalidMessageError,
     MessageDeliveryError,
     TransportUnavailableError,
@@ -46,7 +47,9 @@ class LocalHTTPTransport(MessageTransport):
             detail = response.text
 
         detail_lower = detail.lower()
-        if "multiple agents" in detail_lower:
+        if response.status_code == 403 or "denied" in detail_lower or "not permitted" in detail_lower:
+            raise CommunicationDeniedError(detail)
+        elif "multiple agents" in detail_lower:
             raise AmbiguousAgentError(detail)
         elif "not found" in detail_lower:
             raise AgentNotFoundError(detail)

@@ -16,7 +16,7 @@ def repo_root() -> Path:
 
 
 class ServerThread(threading.Thread):
-    def __init__(self, app, host="127.0.0.1", port=8789):
+    def __init__(self, app, host="127.0.0.1", port=8794):
         super().__init__(daemon=True)
         self.config = uvicorn.Config(app=app, host=host, port=port, log_level="warning")
         self.server = uvicorn.Server(config=self.config)
@@ -29,16 +29,18 @@ class ServerThread(threading.Thread):
 
 
 def test_end_to_end_agent_communication(repo_root: Path, monkeypatch):
-    monkeypatch.setenv("FORMICX_DAEMON_URL", "http://127.0.0.1:8789")
+    test_port = 8794
+    daemon_url = f"http://127.0.0.1:{test_port}"
+    monkeypatch.setenv("FORMICX_DAEMON_URL", daemon_url)
 
     manager = AgentManager()
-    daemon = FormicxDaemon(host="127.0.0.1", port=8789, manager=manager)
+    daemon = FormicxDaemon(host="127.0.0.1", port=test_port, manager=manager)
 
-    server_thread = ServerThread(daemon.app, host="127.0.0.1", port=8789)
+    server_thread = ServerThread(daemon.app, host="127.0.0.1", port=test_port)
     server_thread.start()
     time.sleep(0.5)
 
-    client = DaemonClient(base_url="http://127.0.0.1:8789", timeout=30.0)
+    client = DaemonClient(base_url=daemon_url, timeout=30.0)
 
     try:
         res_research = client.register_agent(repo_root / "agents" / "research-agent")
@@ -48,9 +50,10 @@ def test_end_to_end_agent_communication(repo_root: Path, monkeypatch):
         coord_id = res_coord["agent_id"]
 
         client.start_agent("research-agent")
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         client.start_agent("coordinator-agent")
+        time.sleep(1.0)
 
         # Poll until both agents complete message exchange or 10s timeout
         start_t = time.time()

@@ -28,3 +28,9 @@ class InvalidMessageError(CommunicationError):
 class TransportUnavailableError(CommunicationError):
     """Raised when the communication transport cannot reach the daemon."""
     pass
+
+
+class CommunicationDeniedError(CommunicationError):
+    """Raised when an agent attempts to communicate with a destination prohibited by policy."""
+    pass
+

@@ -9,16 +9,24 @@ from formicx.models.message import Message
 from formicx.runtime.registry import AgentRegistry
 from formicx.communication.discovery import AgentDiscoveryService
 from formicx.communication.inbox import AgentInbox
+from formicx.communication.policy import CommunicationPolicyEngine
 from formicx.communication.router import MessageRouter
 
 
 class CommunicationService:
-    """High-level Communication Service managing routing, inboxes, and discovery."""
+    """High-level Communication Service managing routing, inboxes, discovery, and communication policies."""
 
-    def __init__(self, registry: AgentRegistry) -> None:
+    def __init__(
+        self,
+        registry: AgentRegistry,
+        policy_engine: Optional[CommunicationPolicyEngine] = None,
+    ) -> None:
         self._registry = registry
         self._discovery = AgentDiscoveryService(registry=self._registry)
-        self._router = MessageRouter(discovery=self._discovery)
+        self._policy_engine = (
+            policy_engine if policy_engine is not None else CommunicationPolicyEngine(discovery=self._discovery)
+        )
+        self._router = MessageRouter(discovery=self._discovery, policy_engine=self._policy_engine)
 
     @property
     def discovery(self) -> AgentDiscoveryService:
@@ -27,6 +35,11 @@ class CommunicationService:
     @property
     def router(self) -> MessageRouter:
         return self._router
+
+    @property
+    def policy_engine(self) -> CommunicationPolicyEngine:
+        return self._policy_engine
+
 
     def send_message(self, message: Message) -> Dict[str, Any]:
         """Send a message from one agent to another.

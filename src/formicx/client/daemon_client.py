@@ -161,7 +161,17 @@ class DaemonClient:
                 detail = data.get("detail", response.text)
             except Exception:
                 detail = response.text
-            raise DaemonAPIError(detail)
-
         return response.json()
+
+    # --- Phase 5 Agent Communication Policies Client Methods ---
+
+    def list_policies(self) -> Dict[str, Any]:
+        """Fetch all loaded agent communication policies from formicxd."""
+        return self._request("GET", "/v1/policies")
+
+    def check_policy(self, source: str, destination: str) -> Dict[str, Any]:
+        """Check whether source is permitted by policy to communicate with destination."""
+        params = f"?source={source}&destination={destination}"
+        return self._request("GET", f"/v1/policies/check{params}")
+
 

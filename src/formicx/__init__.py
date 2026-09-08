@@ -7,11 +7,14 @@ from formicx.client import (
     DaemonUnavailableError,
 )
 from formicx.communication import (
+    AgentCommunicationPolicy,
     AgentDiscoveryService,
     AgentInbox,
     AgentNotFoundError,
     AmbiguousAgentError,
+    CommunicationDeniedError,
     CommunicationError,
+    CommunicationPolicyEngine,
     CommunicationService,
     InvalidMessageError,
     MessageDeliveryError,
@@ -57,9 +60,12 @@ __all__ = [
     "AgentInbox",
     "AgentDiscoveryService",
     "CommunicationError",
+    "CommunicationDeniedError",
     "AgentNotFoundError",
     "AmbiguousAgentError",
     "MessageDeliveryError",
     "InvalidMessageError",
     "TransportUnavailableError",
+    "AgentCommunicationPolicy",
+    "CommunicationPolicyEngine",
 ]

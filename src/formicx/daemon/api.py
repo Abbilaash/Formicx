@@ -15,6 +15,7 @@ from formicx.runtime.manager import AgentManager
 from formicx.communication.exceptions import (
     AgentNotFoundError,
     AmbiguousAgentError,
+    CommunicationDeniedError,
     InvalidMessageError,
     MessageDeliveryError,
 )
@@ -127,6 +128,13 @@ def create_daemon_app(
             content={"detail": str(exc)},
         )
 
+    @app.exception_handler(CommunicationDeniedError)
+    async def communication_denied_handler(request: Request, exc: CommunicationDeniedError):
+        return JSONResponse(
+            status_code=status.HTTP_403_FORBIDDEN,
+            content={"detail": str(exc)},
+        )
+
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
         return JSONResponse(
@@ -186,6 +194,11 @@ def create_daemon_app(
             )
 
         agent = load_agent_manifest(manifest_file)
+        # Clean up any old stopped agent instances with the same name to prevent name resolution ambiguity
+        existing_matches = [a for a in manager.list_agents() if a.name == agent.name]
+        for existing in existing_matches:
+            if not manager.process_manager.is_running(existing.agent_id):
+                manager.unregister_agent(existing.agent_id)
         manager.register_agent(agent)
         return _serialize_agent(agent, manager)
 
@@ -256,5 +269,22 @@ def create_daemon_app(
             running_only=req.running_only,
         )
         return {"recipients": recipients}
+
+    # --- Phase 5 Agent Communication Policies Endpoints ---
+
+    @app.get("/v1/policies")
+    async def list_policies() -> Dict[str, Any]:
+        policies = communication_service.policy_engine.list_policies()
+        return {k: v.model_dump(mode="json") for k, v in policies.items()}
+
+    @app.get("/v1/policies/check")
+    async def check_policy(source: str = Query(...), destination: str = Query(...)) -> Dict[str, Any]:
+        allowed = communication_service.policy_engine.can_communicate(source, destination)
+        return {
+            "source": source,
+            "destination": destination,
+            "status": "ALLOWED" if allowed else "DENIED",
+            "allowed": allowed,
+        }
 
     return app
