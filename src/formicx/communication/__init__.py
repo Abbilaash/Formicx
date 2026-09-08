@@ -5,6 +5,7 @@ from formicx.communication.exceptions import (
     AmbiguousAgentError,
     CommunicationDeniedError,
     CommunicationError,
+    DiscoveryError,
     InvalidAgentAddressError,
     InvalidMessageError,
     MessageDeliveryError,
@@ -27,6 +28,7 @@ __all__ = [
     "CommunicationDeniedError",
     "CommunicationError",
     "CommunicationService",
+    "DiscoveryError",
     "InvalidAgentAddressError",
     "InvalidMessageError",
     "MessageDeliveryError",
@@ -39,4 +41,5 @@ __all__ = [
     "AgentCommunicationPolicy",
     "CommunicationPolicyEngine",
 ]
+
 

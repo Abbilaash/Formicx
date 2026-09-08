@@ -8,8 +8,16 @@ import uvicorn
 
 from formicx.communication.peer import PeerRegistry
 from formicx.communication.service import CommunicationService
-from formicx.config import FORMICX_DAEMON_HOST, FORMICX_DAEMON_PORT
+from formicx.config import (
+    FORMICX_ANNOUNCE_INTERVAL,
+    FORMICX_DAEMON_HOST,
+    FORMICX_DAEMON_PORT,
+    FORMICX_DISCOVERY_ENABLED,
+    FORMICX_DISCOVERY_PORT,
+    FORMICX_PEER_TIMEOUT,
+)
 from formicx.daemon.api import create_daemon_app
+from formicx.discovery.service import DiscoveryService
 from formicx.runtime.manager import AgentManager
 
 
@@ -24,6 +32,11 @@ class FormicxDaemon:
         manager: AgentManager | None = None,
         comm_service: CommunicationService | None = None,
         peer_registry: PeerRegistry | None = None,
+        discovery_service: DiscoveryService | None = None,
+        discovery_enabled: bool = FORMICX_DISCOVERY_ENABLED,
+        discovery_port: int = FORMICX_DISCOVERY_PORT,
+        announce_interval: float = FORMICX_ANNOUNCE_INTERVAL,
+        peer_timeout: float = FORMICX_PEER_TIMEOUT,
     ) -> None:
         self.host = host
         self.port = port
@@ -41,9 +54,25 @@ class FormicxDaemon:
             )
         )
 
+        self.discovery_service = (
+            discovery_service
+            if discovery_service is not None
+            else DiscoveryService(
+                local_node_name=self.node_name,
+                local_node_host=self.host,
+                local_node_port=self.port,
+                peer_registry=self.peer_registry,
+                discovery_port=discovery_port,
+                announce_interval=announce_interval,
+                peer_timeout=peer_timeout,
+                enabled=discovery_enabled,
+            )
+        )
+
         self.app = create_daemon_app(
             self.manager,
             comm_service=self.comm_service,
+            discovery_service=self.discovery_service,
             node_name=self.node_name,
             node_host=self.host,
             node_port=self.port,

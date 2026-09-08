@@ -8,11 +8,14 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 6 Complete
+## Current Status — Phase 7 Complete
 
-Formicx is currently at **Phase 6 (Distributed Agent Networking)**.
+Formicx is currently at **Phase 7 (Automatic Formicx Node Discovery)**.
 
-Phase 6 introduces inter-node distributed agent messaging across separate machines (Laptops, Raspberry Pis, Cloud Servers). Agents communicate using qualified addresses (`agent-name@node-name`) while maintaining unified SDK primitives (`self.send()`), peer node registries, network HTTP transport routing, authoritative remote communication policy enforcement, and `formicx node` CLI management tools.
+Phase 7 introduces automatic Local Area Network (LAN) node discovery over UDP. `formicxd` daemons announce their presence, detect peer nodes automatically (`ANNOUNCE`/`DISCOVER` datagrams), track peer liveness (`last_seen` timestamps and expiration timeouts), and update the in-memory `PeerRegistry` dynamically without requiring manual peer configuration files.
+
+Phase 6 inter-node messaging (`agent-name@node-name`) and Phase 5 communication policy enforcement remain 100% authoritative.
+
 
 ---
 
@@ -106,19 +109,23 @@ agent_policies:
 
 ## CLI Node & Peer Commands
 
-Inspect local node details and manage remote peers from the terminal:
+Inspect local node details, trigger LAN node discovery, and manage remote peers from the terminal:
 
 ```bash
-# Display local node details
+# Display local node details and discovery status
 formicx node info
 
-# List known remote peer nodes
+# List known peer nodes (manual & auto-discovered)
 formicx node peers
+
+# Send an immediate LAN discovery request to discover active peers
+formicx node discover
 
 # Ping remote peer node health endpoint
 formicx node ping raspberry-pi
 # ONLINE Ping to peer 'raspberry-pi' (192.168.1.50:8000) succeeded in 4.25 ms.
 ```
+
 
 ---
 

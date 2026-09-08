@@ -16,12 +16,15 @@ from formicx.communication.exceptions import (
     AgentNotFoundError,
     AmbiguousAgentError,
     CommunicationDeniedError,
+    DiscoveryError,
     InvalidAgentAddressError,
     InvalidMessageError,
     MessageDeliveryError,
     NodeUnavailableError,
 )
 from formicx.communication.service import CommunicationService
+from formicx.discovery.service import DiscoveryService
+
 
 
 class RegisterRequest(BaseModel):
@@ -62,6 +65,7 @@ def _serialize_agent(agent: Agent, manager: AgentManager) -> Dict[str, Any]:
 def create_daemon_app(
     manager: AgentManager,
     comm_service: Optional[CommunicationService] = None,
+    discovery_service: Optional[DiscoveryService] = None,
     node_name: Optional[str] = None,
     node_host: Optional[str] = None,
     node_port: Optional[int] = None,
@@ -78,6 +82,16 @@ def create_daemon_app(
         if comm_service is not None
         else CommunicationService(registry=manager.registry)
     )
+
+    if discovery_service is not None:
+        @app.on_event("startup")
+        async def _start_discovery():
+            await discovery_service.start()
+
+        @app.on_event("shutdown")
+        async def _stop_discovery():
+            await discovery_service.stop()
+
 
     def _resolve_agent(identifier: str) -> Agent:
         manager.refresh_all_statuses()
@@ -153,6 +167,14 @@ def create_daemon_app(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"detail": str(exc)},
         )
+
+    @app.exception_handler(DiscoveryError)
+    async def discovery_error_handler(request: Request, exc: DiscoveryError):
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={"detail": str(exc)},
+        )
+
 
     @app.exception_handler(ValueError)
     async def value_error_handler(request: Request, exc: ValueError):
@@ -321,24 +343,45 @@ def create_daemon_app(
 
     @app.get("/v1/node/info")
     async def get_node_info() -> Dict[str, Any]:
-        """Get local Formicx node information."""
+        """Get local Formicx node information and discovery status."""
+        peers = communication_service.peer_registry.list_peers(active_only=True)
+        disc_enabled = discovery_service.enabled if discovery_service else False
+        disc_port = discovery_service.discovery_port if discovery_service else 9999
         return {
             "name": node_name or "local",
             "host": node_host or "127.0.0.1",
             "port": node_port or 8765,
             "status": "ONLINE",
+            "discovery_enabled": disc_enabled,
+            "discovery_port": disc_port,
+            "peer_count": len(peers),
         }
 
     @app.get("/v1/node/peers")
-    async def list_peers() -> List[Dict[str, Any]]:
+    async def list_peers(active_only: bool = Query(False)) -> List[Dict[str, Any]]:
         """List registered peer nodes in the peer registry."""
-        peers = communication_service.peer_registry.list_peers()
+        peers = communication_service.peer_registry.list_peers(active_only=active_only)
         return [p.model_dump(mode="json") for p in peers]
+
+    @app.post("/v1/node/discover", status_code=status.HTTP_200_OK)
+    async def trigger_node_discovery() -> Dict[str, Any]:
+        """Trigger an immediate LAN discovery broadcast."""
+        if discovery_service is None or not discovery_service.enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formicx node discovery service is disabled or unavailable.",
+            )
+        discovery_service.send_discovery_request()
+        return {
+            "status": "DISCOVERY_TRIGGERED",
+            "node": node_name or "local",
+        }
 
     @app.get("/v1/node/ping/{peer_name}")
     async def ping_peer(peer_name: str) -> Dict[str, Any]:
         """Ping a remote peer node health endpoint."""
         peer = communication_service.peer_registry.get_peer(peer_name)
         return communication_service.network_transport.ping_peer(peer)
+
 
     return app

@@ -17,6 +17,7 @@ from formicx.communication import (
     CommunicationError,
     CommunicationPolicyEngine,
     CommunicationService,
+    DiscoveryError,
     InvalidAgentAddressError,
     InvalidMessageError,
     MessageDeliveryError,
@@ -28,6 +29,7 @@ from formicx.communication import (
     TransportUnavailableError,
 )
 from formicx.daemon import FormicxDaemon
+from formicx.discovery import DiscoveryMessage, DiscoveryMessageType, DiscoveryService
 from formicx.enums import AgentStatus, MessageType, NodeStatus
 from formicx.manifests import load_agent_manifest
 from formicx.models import Agent as AgentModel, AgentRuntime, Message, Node, NodeResources, Service, Team
@@ -75,10 +77,15 @@ __all__ = [
     "TransportUnavailableError",
     "InvalidAgentAddressError",
     "NodeUnavailableError",
+    "DiscoveryError",
     "PeerNode",
     "PeerRegistry",
     "NetworkHTTPTransport",
     "AgentCommunicationPolicy",
     "CommunicationPolicyEngine",
+    "DiscoveryService",
+    "DiscoveryMessage",
+    "DiscoveryMessageType",
 ]
+
 

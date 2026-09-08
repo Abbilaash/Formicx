@@ -180,13 +180,21 @@ class DaemonClient:
         """Get local Formicx node details."""
         return self._request("GET", "/v1/node/info")
 
-    def list_peers(self) -> List[Dict[str, Any]]:
+    def list_peers(self, active_only: bool = False) -> List[Dict[str, Any]]:
         """List all registered remote peer nodes."""
-        return self._request("GET", "/v1/node/peers")
+        path = "/v1/node/peers"
+        if active_only:
+            path += "?active_only=true"
+        return self._request("GET", path)
+
+    def trigger_discovery(self) -> Dict[str, Any]:
+        """Trigger an immediate LAN node discovery request."""
+        return self._request("POST", "/v1/node/discover")
 
     def ping_peer(self, peer_name: str) -> Dict[str, Any]:
         """Ping a remote peer node to check status and latency."""
         return self._request("GET", f"/v1/node/ping/{peer_name}")
+
 
 
 

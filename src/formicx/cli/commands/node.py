@@ -1,5 +1,4 @@
-"""Formicx CLI Node & Peer Management Commands."""
-
+import datetime
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -33,6 +32,12 @@ def node_info() -> None:
     table.add_row("Port", str(info.get("port")))
     table.add_row("Status", str(info.get("status")))
 
+    disc_enabled = "enabled" if info.get("discovery_enabled") else "disabled"
+    table.add_row("Discovery", disc_enabled)
+    if info.get("discovery_enabled"):
+        table.add_row("Discovery Port", str(info.get("discovery_port", 9999)))
+    table.add_row("Active Peer Count", str(info.get("peer_count", 0)))
+
     console.print(table)
 
 
@@ -54,6 +59,51 @@ def node_peers() -> None:
     table.add_column("Name", style="bold cyan")
     table.add_column("Host", style="green")
     table.add_column("Port", style="green")
+    table.add_column("Source", style="blue")
+    table.add_column("Status", style="yellow")
+    table.add_column("Last Seen", style="dim white")
+
+    for peer in peers:
+        last_seen_val = peer.get("last_seen")
+        if last_seen_val:
+            dt = datetime.datetime.fromtimestamp(last_seen_val)
+            last_seen_str = dt.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            last_seen_str = "N/A"
+
+        table.add_row(
+            peer.get("name", ""),
+            peer.get("host", ""),
+            str(peer.get("port", "")),
+            peer.get("source", "manual"),
+            peer.get("status", "UNKNOWN"),
+            last_seen_str,
+        )
+
+    console.print(table)
+
+
+@node_app.command("discover")
+def node_discover() -> None:
+    """Trigger an immediate LAN discovery request and display discovered peer nodes."""
+    client = get_client()
+    try:
+        res = client.trigger_discovery()
+        console.print(f"[bold green]Discovery request sent successfully from node '{res.get('node')}'.[/bold green]")
+        peers = client.list_peers()
+    except DaemonClientError as exc:
+        console.print(f"[bold red]Error:[/] {exc}")
+        raise typer.Exit(code=1)
+
+    if not peers:
+        console.print("[yellow]No peer nodes discovered yet.[/yellow]")
+        return
+
+    table = Table(title="Discovered Peer Nodes", show_header=True, header_style="bold magenta")
+    table.add_column("Name", style="bold cyan")
+    table.add_column("Host", style="green")
+    table.add_column("Port", style="green")
+    table.add_column("Source", style="blue")
     table.add_column("Status", style="yellow")
 
     for peer in peers:
@@ -61,6 +111,7 @@ def node_peers() -> None:
             peer.get("name", ""),
             peer.get("host", ""),
             str(peer.get("port", "")),
+            peer.get("source", "discovered"),
             peer.get("status", "UNKNOWN"),
         )
 
@@ -89,3 +140,4 @@ def node_ping(peer_name: str = typer.Argument(..., help="Name of the peer node t
         )
     else:
         console.print(f"[bold red]OFFLINE[/bold red] Peer '[bold cyan]{peer_name}[/bold cyan]' status: {status_str}")
+

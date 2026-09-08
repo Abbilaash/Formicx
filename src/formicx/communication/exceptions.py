@@ -45,3 +45,9 @@ class InvalidAgentAddressError(CommunicationError):
     pass
 
 
+class DiscoveryError(CommunicationError):
+    """Raised when node discovery encounters an unrecoverable failure."""
+    pass
+
+
+
