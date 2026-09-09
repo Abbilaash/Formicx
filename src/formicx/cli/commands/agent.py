@@ -363,3 +363,74 @@ def agent_validate(
         typer.echo(f"Error during validation: {exc}", err=True)
         raise typer.Exit(code=1)
 
+
+def _format_bytes(bytes_val: int) -> str:
+    """Format raw byte counts into human-readable strings for display."""
+    if bytes_val < 1024:
+        return f"{bytes_val} B"
+    elif bytes_val < 1024 * 1024:
+        return f"{bytes_val / 1024:.1f} KB"
+    elif bytes_val < 1024 * 1024 * 1024:
+        return f"{bytes_val / (1024 * 1024):.1f} MB"
+    else:
+        return f"{bytes_val / (1024 * 1024 * 1024):.2f} GB"
+
+
+@agent_app.command("resources")
+def agent_resources(
+    agent: Optional[str] = typer.Argument(
+        None,
+        help="Optional agent name or Agent ID for detailed resource inspection.",
+    )
+) -> None:
+    """Display OS process CPU, Memory, and Thread resource usage for Formicx agents.
+
+    Examples:
+        formicx agent resources
+        formicx agent resources research-agent
+    """
+    try:
+        client = _get_client()
+        if agent:
+            res = client.get_agent_resources(agent)
+            pid_str = str(res.get("pid")) if res.get("pid") is not None else "-"
+            mem_str = _format_bytes(res.get("memory_bytes", 0))
+
+            typer.echo(f"Agent: {res.get('agent_name', agent)}\n")
+            typer.echo(f"PID:")
+            typer.echo(f"{pid_str}\n")
+            typer.echo(f"Status:")
+            typer.echo(f"{str(res.get('status', '')).upper()}\n")
+            typer.echo(f"CPU:")
+            typer.echo(f"{res.get('cpu_percent', 0.0):.1f}%\n")
+            typer.echo(f"Memory:")
+            typer.echo(f"{mem_str}\n")
+            typer.echo(f"Memory Percentage:")
+            typer.echo(f"{res.get('memory_percent', 0.0):.1f}%\n")
+            typer.echo(f"Threads:")
+            typer.echo(f"{res.get('thread_count', 0)}")
+        else:
+            resources = client.get_all_resources()
+            if not resources:
+                typer.echo("No registered agents found.")
+                return
+
+            header = f"{'AGENT':<18} {'PID':<10} {'CPU':<10} {'MEMORY':<14} {'STATUS'}"
+            divider = "-" * 65
+            typer.echo("FORMICX AGENT RESOURCES\n")
+            typer.echo(header)
+            typer.echo(divider)
+
+            for res in resources:
+                name = res.get("agent_name", res.get("agent_id", ""))
+                pid_str = str(res.get("pid")) if res.get("pid") is not None else "-"
+                cpu_str = f"{res.get('cpu_percent', 0.0):.1f}%"
+                mem_str = _format_bytes(res.get("memory_bytes", 0))
+                status_str = str(res.get("status", "")).upper()
+                typer.echo(f"{name:<18} {pid_str:<10} {cpu_str:<10} {mem_str:<14} {status_str}")
+
+    except DaemonClientError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+

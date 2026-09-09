@@ -195,6 +195,12 @@ class DaemonClient:
         """Ping a remote peer node to check status and latency."""
         return self._request("GET", f"/v1/node/ping/{peer_name}")
 
+    # --- Phase 8 Agent-Aware Resource Monitoring Client Methods ---
 
+    def get_all_resources(self) -> List[Dict[str, Any]]:
+        """Fetch OS resource usage metrics for all registered agents."""
+        return self._request("GET", "/v1/resources")
 
-
+    def get_agent_resources(self, identifier: str) -> Dict[str, Any]:
+        """Fetch OS resource usage metrics for a specific agent by ID or name."""
+        return self._request("GET", f"/v1/agents/{identifier}/resources")

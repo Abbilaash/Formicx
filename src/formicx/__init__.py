@@ -33,6 +33,7 @@ from formicx.discovery import DiscoveryMessage, DiscoveryMessageType, DiscoveryS
 from formicx.enums import AgentStatus, MessageType, NodeStatus
 from formicx.manifests import load_agent_manifest
 from formicx.models import Agent as AgentModel, AgentRuntime, Message, Node, NodeResources, Service, Team
+from formicx.resources import AgentResourceMonitor, AgentResourceUsage, ResourceService
 from formicx.runtime import AgentManager, AgentRegistry, ProcessHandle, ProcessManager
 from formicx.sdk import Agent, AgentContext, BaseAgent
 
@@ -86,6 +87,10 @@ __all__ = [
     "DiscoveryService",
     "DiscoveryMessage",
     "DiscoveryMessageType",
+    "AgentResourceUsage",
+    "AgentResourceMonitor",
+    "ResourceService",
 ]
+
 
 

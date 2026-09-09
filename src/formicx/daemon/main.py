@@ -15,9 +15,12 @@ from formicx.config import (
     FORMICX_DISCOVERY_ENABLED,
     FORMICX_DISCOVERY_PORT,
     FORMICX_PEER_TIMEOUT,
+    FORMICX_RESOURCE_INTERVAL,
+    FORMICX_RESOURCES_ENABLED,
 )
 from formicx.daemon.api import create_daemon_app
 from formicx.discovery.service import DiscoveryService
+from formicx.resources.service import ResourceService
 from formicx.runtime.manager import AgentManager
 
 
@@ -33,10 +36,13 @@ class FormicxDaemon:
         comm_service: CommunicationService | None = None,
         peer_registry: PeerRegistry | None = None,
         discovery_service: DiscoveryService | None = None,
+        resource_service: ResourceService | None = None,
         discovery_enabled: bool = FORMICX_DISCOVERY_ENABLED,
         discovery_port: int = FORMICX_DISCOVERY_PORT,
         announce_interval: float = FORMICX_ANNOUNCE_INTERVAL,
         peer_timeout: float = FORMICX_PEER_TIMEOUT,
+        resources_enabled: bool = FORMICX_RESOURCES_ENABLED,
+        resource_interval: float = FORMICX_RESOURCE_INTERVAL,
     ) -> None:
         self.host = host
         self.port = port
@@ -69,10 +75,21 @@ class FormicxDaemon:
             )
         )
 
+        self.resource_service = (
+            resource_service
+            if resource_service is not None
+            else ResourceService(
+                agent_manager=self.manager,
+                interval_seconds=resource_interval,
+                enabled=resources_enabled,
+            )
+        )
+
         self.app = create_daemon_app(
             self.manager,
             comm_service=self.comm_service,
             discovery_service=self.discovery_service,
+            resource_service=self.resource_service,
             node_name=self.node_name,
             node_host=self.host,
             node_port=self.port,

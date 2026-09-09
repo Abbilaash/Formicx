@@ -8,13 +8,14 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 7 Complete
+## Current Status — Phase 8 Complete
 
-Formicx is currently at **Phase 7 (Automatic Formicx Node Discovery)**.
+Formicx is currently at **Phase 8 (Agent-Aware Resource Monitoring)**.
 
-Phase 7 introduces automatic Local Area Network (LAN) node discovery over UDP. `formicxd` daemons announce their presence, detect peer nodes automatically (`ANNOUNCE`/`DISCOVER` datagrams), track peer liveness (`last_seen` timestamps and expiration timeouts), and update the in-memory `PeerRegistry` dynamically without requiring manual peer configuration files.
+Phase 8 connects Formicx agents with underlying Linux OS processes (PIDs). Using `psutil`, Formicx collects non-blocking process telemetry (`cpu_percent`, canonical `memory_bytes`, `memory_percent`, `thread_count`, and process status) per agent identity, exposing resource telemetry via control plane APIs (`/v1/resources`) and the `formicx agent resources` CLI.
 
-Phase 6 inter-node messaging (`agent-name@node-name`) and Phase 5 communication policy enforcement remain 100% authoritative.
+Automatic node discovery (Phase 7), distributed networking (Phase 6), and communication policies (Phase 5) remain 100% operational.
+
 
 
 ---
@@ -182,6 +183,10 @@ formicx daemon status
 # Check local node and peers
 formicx node info
 formicx node peers
+
+# Inspect OS resource usage across agents
+formicx agent resources
+formicx agent resources research-agent
 
 # Register an agent
 formicx agent register ./agents/hello-agent

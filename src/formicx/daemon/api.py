@@ -24,7 +24,7 @@ from formicx.communication.exceptions import (
 )
 from formicx.communication.service import CommunicationService
 from formicx.discovery.service import DiscoveryService
-
+from formicx.resources.service import ResourceService
 
 
 class RegisterRequest(BaseModel):
@@ -66,6 +66,7 @@ def create_daemon_app(
     manager: AgentManager,
     comm_service: Optional[CommunicationService] = None,
     discovery_service: Optional[DiscoveryService] = None,
+    resource_service: Optional[ResourceService] = None,
     node_name: Optional[str] = None,
     node_host: Optional[str] = None,
     node_port: Optional[int] = None,
@@ -91,6 +92,15 @@ def create_daemon_app(
         @app.on_event("shutdown")
         async def _stop_discovery():
             await discovery_service.stop()
+
+    if resource_service is not None:
+        @app.on_event("startup")
+        async def _start_resources():
+            await resource_service.start()
+
+        @app.on_event("shutdown")
+        async def _stop_resources():
+            await resource_service.stop()
 
 
     def _resolve_agent(identifier: str) -> Agent:
@@ -383,5 +393,26 @@ def create_daemon_app(
         peer = communication_service.peer_registry.get_peer(peer_name)
         return communication_service.network_transport.ping_peer(peer)
 
+    # --- Phase 8 Agent-Aware Resource Monitoring Endpoints ---
+
+    @app.get("/v1/resources")
+    async def get_all_agent_resources() -> List[Dict[str, Any]]:
+        """Get resource usage metrics for all registered agents."""
+        if resource_service is None:
+            return []
+        resources = resource_service.get_all_resources()
+        return [r.model_dump(mode="json") for r in resources]
+
+    @app.get("/v1/agents/{identifier}/resources")
+    async def get_agent_resources(identifier: str) -> Dict[str, Any]:
+        """Get resource usage metrics for a specific agent by ID or name."""
+        if resource_service is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Formicx resource service is disabled.",
+            )
+        usage = resource_service.get_agent_resources(identifier)
+        return usage.model_dump(mode="json")
 
     return app
+
