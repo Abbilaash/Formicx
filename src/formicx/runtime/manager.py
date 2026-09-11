@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from formicx.enums.agent_status import AgentStatus
@@ -90,6 +91,7 @@ class AgentManager:
                 agent_id, agent.entrypoint, agent_name=agent.name
             )
             agent.status = AgentStatus.RUNNING
+            agent.started_at = datetime.now(timezone.utc)
         except Exception:
             agent.status = AgentStatus.FAILED
             raise

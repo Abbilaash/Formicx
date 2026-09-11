@@ -59,6 +59,7 @@ def _serialize_agent(agent: Agent, manager: AgentManager) -> Dict[str, Any]:
         "capabilities": agent.capabilities,
         "permissions": agent.permissions,
         "node_id": agent.node_id,
+        "started_at": agent.started_at.isoformat() if agent.started_at else None,
     }
 
 

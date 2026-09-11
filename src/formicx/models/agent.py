@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, Field, field_validator
 
@@ -34,6 +35,7 @@ class Agent(BaseModel):
     capabilities: List[str] = Field(default_factory=list)
     permissions: List[str] = Field(default_factory=list)
     node_id: Optional[str] = None
+    started_at: Optional[datetime] = None
 
     @field_validator("name", "version", "entrypoint")
     @classmethod

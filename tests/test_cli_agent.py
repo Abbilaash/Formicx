@@ -67,6 +67,8 @@ def test_cli_agent_start_status_stop_flow(mock_daemon):
     assert res.exit_code == 0
     assert "hello-agent" in res.stdout
     assert "RUNNING" in res.stdout
+    assert "Uptime:" in res.stdout
+    assert "Uptime: -" not in res.stdout
 
     # Restart
     res = runner.invoke(cli_app, ["agent", "restart", "hello-agent"])
