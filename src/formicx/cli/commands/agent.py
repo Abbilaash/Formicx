@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from datetime import datetime, timezone
 import typer
 from formicx.client.daemon_client import DaemonClient, DaemonClientError
 
@@ -185,6 +186,38 @@ def _to_snake_name(name: str) -> str:
     return name.replace("-", "_").lower()
 
 
+def _format_uptime(started_at: str | None) -> str:
+    """Return a compact, human-readable uptime string for an ISO timestamp."""
+    if not started_at:
+        return "-"
+
+    try:
+        started = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+    except ValueError:
+        return "-"
+
+    if started.tzinfo is None:
+        started = started.replace(tzinfo=timezone.utc)
+
+    elapsed = datetime.now(timezone.utc) - started.astimezone(timezone.utc)
+    total_seconds = max(0, int(elapsed.total_seconds()))
+    days, remainder = divmod(total_seconds, 24 * 60 * 60)
+    hours, remainder = divmod(remainder, 60 * 60)
+    minutes, seconds = divmod(remainder, 60)
+
+    parts: list[str] = []
+    if days:
+        parts.append(f"{days}d")
+    if hours:
+        parts.append(f"{hours}h")
+    if minutes:
+        parts.append(f"{minutes}m")
+    if not parts:
+        parts.append(f"{seconds}s")
+
+    return " ".join(parts)
+
+
 @agent_app.command("status")
 def agent_status(
     agent: str = typer.Argument(
@@ -205,12 +238,15 @@ def agent_status(
         runtime = data.get("runtime", {})
         lang = runtime.get("language", "python")
         framework = runtime.get("framework", "custom")
+        status_str = str(data.get("status", "")).upper()
         pid_str = str(data.get("pid")) if data.get("pid") is not None else "-"
+        uptime_str = _format_uptime(data.get("started_at"))
 
         typer.echo("Agent\n")
         typer.echo(f"Name: {data.get('name')}")
         typer.echo(f"ID: {data.get('agent_id')}\n")
-        typer.echo(f"Status: {str(data.get('status')).upper()}\n")
+        typer.echo(f"Status: {status_str}\n")
+        typer.echo(f"Uptime: {uptime_str}\n")
         typer.echo(f"Runtime: {lang} ({framework})")
         typer.echo(f"PID: {pid_str}\n")
         typer.echo("Entrypoint:")

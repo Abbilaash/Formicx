@@ -22,6 +22,7 @@ def test_agent_creation_defaults():
     assert agent.capabilities == []
     assert agent.permissions == []
     assert agent.node_id is None
+    assert agent.started_at is None
 
 
 def test_agent_explicit_id_and_fields():
