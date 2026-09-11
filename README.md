@@ -332,8 +332,18 @@ formicx/
 
 ---
 
+## Contributing & Good First Issues
+
+Formicx welcomes open-source contributions! Whether you're fixing a bug, improving CLI commands, or building new agent templates, check out our guides:
+
+- [Contributing Guide](CONTRIBUTING.md) — Setup local dev environment, run tests, submit PRs.
+- [Good First Issues Guide](docs/GOOD_FIRST_ISSUES.md) — Curated beginner-friendly tasks with clear pointers and acceptance criteria.
+
+---
+
 ## License
 
 Formicx is released under the [MIT License](LICENSE).
+
 
 
