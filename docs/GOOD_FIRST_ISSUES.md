@@ -96,6 +96,16 @@ Enable Typer's built-in shell autocompletion for the `formicx` command (`formicx
 
 ---
 
+### 9. `[Good First Issue] feat(runtime): Formalize Agent Lifecycle Finite State Machine (FSM) and add PAUSED state`
+- **Category**: Future Improvement / State Machine
+- **Difficulty**: Beginner–Intermediate
+- **Labels**: `good first issue`, `runtime`, `architecture`
+- **Target Files**: `src/formicx/enums/agent_status.py`, `src/formicx/models/agent.py`, `src/formicx/runtime/manager.py`
+- **Spec**: See [docs/issues/issue-9-agent-lifecycle-fsm.md](file:///a:/PROJECTS/Formicx/docs/issues/issue-9-agent-lifecycle-fsm.md)
+
+
+---
+
 ## 🐧 Professional OS-Binding Architectural Features
 
 ### 6. `[Professional Feature] feat(systemd): Native Linux systemd service supervision and journald logging`
