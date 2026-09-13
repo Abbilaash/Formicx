@@ -105,17 +105,4 @@ Enable Typer's built-in shell autocompletion for the `formicx` command (`formicx
 - **Target Files**: `src/formicx/core/systemd/`, `src/formicx/cli/commands/agent.py`
 - **Spec**: See [docs/issues/issue-6-systemd-service-supervisor.md](file:///a:/PROJECTS/Formicx/docs/issues/issue-6-systemd-service-supervisor.md)
 
-### 7. `[Professional Feature] feat(cgroups): Linux cgroups v2 Kernel-Level Resource Enforcement`
-- **Category**: OS Binding / Kernel Resource Capping
-- **Difficulty**: Advanced
-- **Labels**: `feature`, `linux`, `cgroups`, `resources`, `control-plane`
-- **Target Files**: `src/formicx/resources/cgroups.py`, `src/formicx/models/agent.py`
-- **Spec**: See [docs/issues/issue-7-cgroups-v2-resource-limits.md](file:///a:/PROJECTS/Formicx/docs/issues/issue-7-cgroups-v2-resource-limits.md)
-
-### 8. `[Professional Feature] feat(ipc): High-Performance Linux Unix Domain Socket Transport for Local IPC`
-- **Category**: OS Binding / Kernel Sockets IPC
-- **Difficulty**: Intermediate–Advanced
-- **Labels**: `feature`, `linux`, `ipc`, `performance`, `messaging`
-- **Target Files**: `src/formicx/communication/unix_transport.py`, `src/formicx/communication/router.py`
-- **Spec**: See [docs/issues/issue-8-unix-domain-socket-ipc.md](file:///a:/PROJECTS/Formicx/docs/issues/issue-8-unix-domain-socket-ipc.md)
 
