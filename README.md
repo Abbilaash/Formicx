@@ -1,3 +1,15 @@
+<p align="center">
+  <img src="image.png" alt="Formicx Logo" width="100%">
+</p>
+
+<p align="center">
+  <a href="https://github.com/Abbilaash/Formicx/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Abbilaash/Formicx?color=e50914&style=flat-square" alt="License"></a>
+  <a href="https://github.com/Abbilaash/Formicx"><img src="https://img.shields.io/badge/Open%20Source-%E2%9D%A4-e50914?style=flat-square" alt="Open Source"></a>
+  <a href="https://github.com/Abbilaash/Formicx"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAbbilaash%2FFormicx&count_bg=%23E50914&title_bg=%23222222&icon=&icon_color=%23E1E1E1&title=views&edge_flat=false" alt="Views"></a>
+  <a href="https://github.com/Abbilaash/Formicx/network/members"><img src="https://img.shields.io/github/forks/Abbilaash/Formicx?color=e50914&style=flat-square" alt="Forks"></a>
+  <a href="https://github.com/Abbilaash/Formicx/stargazers"><img src="https://img.shields.io/github/stars/Abbilaash/Formicx?color=e50914&style=flat-square" alt="Stars"></a>
+</p>
+
 # Formicx
 
 Formicx is an open-source Linux-based operating environment designed specifically for developing, deploying, running, and coordinating persistent autonomous AI agents.
@@ -8,15 +20,19 @@ While Linux handles processes, memory, CPU scheduling, filesystems, networking, 
 
 ---
 
-## Current Status — Phase 8 Complete
+## Why Formicx?
 
-Formicx is currently at **Phase 8 (Agent-Aware Resource Monitoring)**.
+Traditional operating systems like Linux, macOS, and Windows were engineered for web servers, static binaries, and human-driven applications. They were **never designed for autonomous, non-deterministic AI agent fleets**.
 
-Phase 8 connects Formicx agents with underlying Linux OS processes (PIDs). Using `psutil`, Formicx collects non-blocking process telemetry (`cpu_percent`, canonical `memory_bytes`, `memory_percent`, `thread_count`, and process status) per agent identity, exposing resource telemetry via control plane APIs (`/v1/resources`) and the `formicx agent resources` CLI.
+Formicx fills the architectural gap between high-level LLM agent frameworks (LangChain, AutoGen, CrewAI) and low-level operating system kernels.
 
-Automatic node discovery (Phase 7), distributed networking (Phase 6), and communication policies (Phase 5) remain 100% operational.
-
-
+| Problem / Issue in Current OS | Impact on AI Agent Fleets | How Formicx Solves It |
+| :--- | :--- | :--- |
+| **Anonymous Process Model** | The kernel sees every agent as generic `python3` processes with zero logical context or agent identity. | **1:1 Kernel PID Mapping:** Assigns a first-class operational identity and kernel process mapping to every agent. |
+| **Opaque Resource Telemetry** | OS monitors container black-boxes, making it impossible to detect agent-specific memory leaks or LLM retry spikes. | **Agent-Aware Telemetry:** Collects non-blocking CPU, RAM (`psutil`), thread count, and uptime per agent via CLI and API. |
+| **No Inter-Agent Access Control** | Prompts attempt to enforce rules ("do not invoke tool X"), leading to rogue agent executions and security breaches. | **Authoritative Control Plane ACLs:** Enforces strict policy envelopes defining authorized agent-to-agent communication paths. |
+| **Manual Network Configuration** | Inter-agent coordination across local devices requires hardcoded IP addresses or centralized cloud webhooks. | **Zero-Config mDNS Peer Discovery:** Automatically discovers agent nodes across local networks over peer-to-peer mDNS. |
+| **Fragile Runtime Lifecycles** | An unhandled exception or OOM error crashes the parent Python process, killing the entire agent swarm without trace. | **Dedicated Supervisor Daemon (`formicxd`):** Provides daemonized background lifecycle governance (`start`, `stop`, `restart`, `recover`). |
 
 ---
 
