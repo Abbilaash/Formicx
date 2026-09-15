@@ -5,7 +5,9 @@
 <p align="center">
   <a href="https://github.com/Abbilaash/Formicx/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Abbilaash/Formicx?color=e50914&style=flat-square" alt="License"></a>
   <a href="https://github.com/Abbilaash/Formicx"><img src="https://img.shields.io/badge/Open%20Source-%E2%9D%A4-e50914?style=flat-square" alt="Open Source"></a>
-  <a href="https://github.com/Abbilaash/Formicx"><img src="https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FAbbilaash%2FFormicx&count_bg=%23E50914&title_bg=%23222222&icon=&icon_color=%23E1E1E1&title=views&edge_flat=false" alt="Views"></a>
+  <a href="https://github.com/Abbilaash/Formicx/graphs/traffic"><img src="https://img.shields.io/badge/Views-142-e50914?style=flat-square" alt="Views"></a>
+  <a href="https://github.com/Abbilaash/Formicx/graphs/traffic"><img src="https://img.shields.io/badge/Clones-154-e50914?style=flat-square" alt="Clones"></a>
+  <a href="https://github.com/Abbilaash/Formicx/graphs/traffic"><img src="https://img.shields.io/badge/Unique%20Cloners-76-e50914?style=flat-square" alt="Unique Cloners"></a>
   <a href="https://github.com/Abbilaash/Formicx/network/members"><img src="https://img.shields.io/github/forks/Abbilaash/Formicx?color=e50914&style=flat-square" alt="Forks"></a>
   <a href="https://github.com/Abbilaash/Formicx/stargazers"><img src="https://img.shields.io/github/stars/Abbilaash/Formicx?color=e50914&style=flat-square" alt="Stars"></a>
 </p>
