@@ -34,10 +34,14 @@ dependencies = [
 [project.scripts]
 formicx = "formicx.cli.main:app"
 formicxd = "formicx.daemon.main:main"
+formicx-mcp = "formicx.mcp.main:main"
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+]
+mcp = [
+    "mcp>=1.0.0",
 ]
 
 [tool.setuptools.packages.find]

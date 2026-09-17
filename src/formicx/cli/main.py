@@ -5,6 +5,7 @@ import typer
 
 from formicx.cli.commands.agent import agent_app
 from formicx.cli.commands.daemon import daemon_app
+from formicx.cli.commands.mcp import mcp_app
 from formicx.cli.commands.message import message_app
 from formicx.cli.commands.node import node_app
 from formicx.cli.commands.policy import policy_app
@@ -18,6 +19,7 @@ app = typer.Typer(
 
 app.add_typer(agent_app, name="agent")
 app.add_typer(daemon_app, name="daemon")
+app.add_typer(mcp_app, name="mcp")
 app.add_typer(message_app, name="message")
 app.add_typer(node_app, name="node")
 app.add_typer(policy_app, name="policy")

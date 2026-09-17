@@ -240,8 +240,32 @@ formicx node --help
 formicx policy --help
 formicx message --help
 formicx daemon --help
+formicx mcp --help
 formicx help
 ```
+
+---
+
+## MCP Integration for AI Assistants
+
+Formicx includes a built-in **Model Context Protocol (MCP)** server (`formicx-mcp` or `formicx mcp start`) that enables AI coding agents (**Antigravity**, **Cursor**, **Claude Desktop**, **Copilot**) to inspect, manage, and communicate with Formicx agents directly from the IDE.
+
+### Features
+- **MCP Tool Execution**: `formicx_list_agents`, `formicx_register_agent`, `formicx_start_agent`, `formicx_stop_agent`, `formicx_send_message`, `formicx_get_inbox`, `formicx_daemon_status`.
+- **Complete Context & Documentation**: AI agents can invoke `formicx_get_documentation` or read `formicx://docs/*` MCP resources to get full context on Formicx SDK usage, manifests, CLI commands, and architecture.
+
+### IDE Configuration (`mcpServers`)
+```json
+{
+  "mcpServers": {
+    "formicx": {
+      "command": "formicx-mcp",
+      "args": []
+    }
+  }
+}
+```
+For detailed setup guides, see the [MCP Integration Guide](docs/mcp_integration.md).
 
 ---
 
