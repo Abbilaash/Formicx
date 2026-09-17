@@ -154,24 +154,28 @@ formicx message send calculator-agent calculator-agent "{\"action\":\"add\",\"a\
 Alternatively, invoke it via a Python test script (`test_calculator.py`):
 
 ```python
-from formicx import Agent
+import time
+from formicx import DaemonClient
 
+client = DaemonClient()
 
-class TestClient(Agent):
+# Send calculation request to calculator-agent
+client.send_message(
+    sender="calculator-agent",
+    recipient="calculator-agent",
+    message_type="REQUEST",
+    payload={"action": "add", "a": 25, "b": 17},
+)
 
-    def on_start(self):
-        self.send(
-            to="calculator-agent",
-            payload={"action": "add", "a": 25, "b": 17},
-        )
+time.sleep(0.5)
 
-    def on_message(self, message):
-        print("Result:", message.payload)
-        self.stop()
-
-
-if __name__ == "__main__":
-    TestClient(agent_name="calculator-agent").run()
+# Fetch calculation response from history
+history = client.get_inbox("calculator-agent", history=True)
+for msg in reversed(history):
+    payload = msg.get("payload", {})
+    if "result" in payload:
+        print("Result:", payload)
+        break
 ```
 
 Run:
