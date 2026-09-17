@@ -171,7 +171,7 @@ class TestClient(Agent):
 
 
 if __name__ == "__main__":
-    TestClient().run()
+    TestClient(agent_name="calculator-agent").run()
 ```
 
 Run:
