@@ -38,133 +38,6 @@ Formicx fills the architectural gap between high-level LLM agent frameworks (Lan
 
 ---
 
-## High-Level Agent SDK Usage
-
-Creating an autonomous Formicx agent with local or distributed communication requires minimal boilerplate:
-
-```python
-from formicx import Agent, CommunicationDeniedError, NodeUnavailableError
-
-
-class CoordinatorAgent(Agent):
-
-    def on_start(self):
-        print(f"[{self.name}] Agent started with ID {self.id}")
-
-        # Send local message
-        self.send(to="research-agent", payload={"task": "local_search"})
-
-        try:
-            # Send distributed message to an agent on a remote node
-            self.send(
-                to="vision-agent@raspberry-pi",
-                payload={"task": "analyze_camera_feed"},
-            )
-        except NodeUnavailableError:
-            print(f"[{self.name}] Remote node 'raspberry-pi' is offline or unknown.")
-        except CommunicationDeniedError as e:
-            print(f"[{self.name}] Inter-node communication blocked by policy: {e}")
-
-    def on_message(self, message):
-        print(f"[{self.name}] Received message from {message.sender}: {message.payload}")
-
-        self.reply(message, {"status": "success", "echo": message.payload})
-
-
-if __name__ == "__main__":
-    CoordinatorAgent().run()
-```
-
----
-
-## Distributed Node & Peer Configuration (`formicx.yaml`)
-
-Configure node identity and peer network definitions:
-
-```yaml
-node:
-  name: laptop
-  host: 0.0.0.0
-  port: 8765
-
-peers:
-  raspberry-pi:
-    host: 192.168.1.50
-    port: 8000
-
-  home-server:
-    host: 192.168.1.60
-    port: 9000
-```
-
----
-
-## Agent Communication Policies
-
-Configure policies in `formicx.yaml` or daemon configuration to restrict local and remote communication:
-
-```yaml
-agent_policies:
-  whatsapp-agent:
-    allow:
-      - mail-agent
-      - calendar-agent
-
-  research-agent:
-    allow:
-      - vision-agent@raspberry-pi
-      - web-agent
-
-  isolated-agent:
-    allow: []
-```
-
-### Key Policy & Networking Rules:
-1. **Unified Addressing:** Local addresses (`"agent-a"`) and qualified distributed addresses (`"agent-a@node-b"`) use identical SDK method calls (`self.send()`).
-2. **Authoritative Enforcement:** Remote messages received over HTTP are validated against local policies before inbox delivery.
-3. **Peer Node Management:** In-memory registry maps remote node names to target IP hosts and ports.
-
----
-
-## CLI Node & Peer Commands
-
-Inspect local node details, trigger LAN node discovery, and manage remote peers from the terminal:
-
-```bash
-# Display local node details and discovery status
-formicx node info
-
-# List known peer nodes (manual & auto-discovered)
-formicx node peers
-
-# Send an immediate LAN discovery request to discover active peers
-formicx node discover
-
-# Ping remote peer node health endpoint
-formicx node ping raspberry-pi
-# ONLINE Ping to peer 'raspberry-pi' (192.168.1.50:8000) succeeded in 4.25 ms.
-```
-
-
----
-
-## CLI Policy & Message Commands
-
-Inspect policy rules and send debug messages directly from the terminal:
-
-```bash
-# List configured agent policies
-formicx policy list
-
-# Check communication permissions
-formicx policy check whatsapp-agent vision-agent@raspberry-pi
-
-# Send a message to a remote agent
-formicx message send coordinator-agent vision-agent@raspberry-pi '{"task":"analyze"}'
-```
-
----
-
 ## Installation
 
 Formicx requires Python 3.11+.
@@ -176,6 +49,140 @@ pip install -e ".[dev]"
 ```
 
 This registers the CLI binaries `formicx` and `formicxd`.
+
+---
+
+## Example
+
+Create, register, and run a **Calculator Agent** with an `add` capability using Formicx.
+
+### 1. Create the Calculator Agent Files
+
+Create a directory named `calculator-agent` containing `agent.yaml` and `main.py`:
+
+**`calculator-agent/agent.yaml`** (Agent Manifest):
+```yaml
+name: calculator-agent
+version: 0.1.0
+
+runtime:
+  language: python
+  framework: custom
+
+entrypoint: main.py
+
+capabilities:
+  - add
+```
+
+**`calculator-agent/main.py`** (Agent Code):
+```python
+import sys
+from formicx import Agent
+
+
+class CalculatorAgent(Agent):
+
+    def on_start(self):
+        print(f"[{self.name}] Calculator Agent started with ID: {self.id}", flush=True)
+
+    def on_message(self, message):
+        payload = message.payload or {}
+        action = payload.get("action")
+
+        if action == "add":
+            a = float(payload.get("a", 0))
+            b = float(payload.get("b", 0))
+            result = a + b
+            print(f"[{self.name}] Calculating {a} + {b} = {result}", flush=True)
+
+            self.reply(
+                message,
+                {
+                    "action": "add",
+                    "a": a,
+                    "b": b,
+                    "result": result,
+                    "status": "success",
+                },
+            )
+
+    def on_stop(self):
+        print(f"[{self.name}] Stopping cleanly.", flush=True)
+
+
+if __name__ == "__main__":
+    CalculatorAgent().run()
+```
+
+### 2. Start the Formicx Daemon
+
+In **Terminal 1**, start the supervisor daemon:
+
+```bash
+formicxd
+```
+
+### 3. Register, Start, and Test the Agent
+
+In **Terminal 2**, run the following commands:
+
+```bash
+# Register the calculator agent
+formicx agent register ./calculator-agent
+
+# Start the agent process
+formicx agent start calculator-agent
+
+# Verify agent status
+formicx agent list
+```
+
+### 4. Send a Request and View Output
+
+Send an `add` calculation message to the agent (Formicx requires the sender to be a registered agent, e.g. `calculator-agent`):
+
+```bash
+formicx message send calculator-agent calculator-agent "{\"action\":\"add\",\"a\":15,\"b\":27}"
+```
+
+**Output:**
+```text
+[calculator-agent] Processing: 15.0 + 27.0 = 42.0
+```
+
+Alternatively, invoke it via a Python test script (`test_calculator.py`):
+
+```python
+from formicx import Agent
+
+
+class TestClient(Agent):
+
+    def on_start(self):
+        self.send(
+            to="calculator-agent",
+            payload={"action": "add", "a": 25, "b": 17},
+        )
+
+    def on_message(self, message):
+        print("Result:", message.payload)
+        self.stop()
+
+
+if __name__ == "__main__":
+    TestClient().run()
+```
+
+Run:
+```bash
+python test_calculator.py
+```
+
+**Output:**
+```text
+Result: {'action': 'add', 'a': 25.0, 'b': 17.0, 'result': 42.0, 'status': 'success'}
+```
 
 ---
 
