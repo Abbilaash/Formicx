@@ -1,0 +1,20 @@
+Source: formicx
+Section: net
+Priority: optional
+Maintainer: Formicx Contributors
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ python3-all,
+ python3-setuptools
+Standards-Version: 4.7.0
+Rules-Requires-Root: no
+
+Package: formicx
+Architecture: all
+Depends:
+ ${python3:Depends},
+ ${misc:Depends}
+Description: Formicx agent-native runtime
+ Formicx is a Linux-based operating environment designed for
+ persistent autonomous AI agents.

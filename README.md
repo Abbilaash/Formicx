@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="image.png" alt="Formicx Logo" width="100%">
+  <img src="image-banner.png" alt="Formicx Logo" width="100%">
 </p>
 
 <p align="center">
