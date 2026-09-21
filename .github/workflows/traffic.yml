@@ -1,0 +1,62 @@
+name: Update Traffic Stats
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at 00:00 UTC
+  workflow_dispatch: # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  update-traffic:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Fetch Traffic Stats & Update Badges
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch views and clones data from GitHub REST API
+          VIEWS_JSON=$(curl -s -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/traffic/views)
+          CLONES_JSON=$(curl -s -H "Authorization: token $GH_TOKEN" -H "Accept: application/vnd.github+json" https://api.github.com/repos/${{ github.repository }}/traffic/clones)
+
+          VIEWS_COUNT=$(echo "$VIEWS_JSON" | jq '.count // 0')
+          CLONES_COUNT=$(echo "$CLONES_JSON" | jq '.count // 0')
+          CLONERS_COUNT=$(echo "$CLONES_JSON" | jq '.uniques // 0')
+
+          cat <<EOF > .github/traffic/views.json
+          {
+            "schemaVersion": 1,
+            "label": "Views",
+            "message": "${VIEWS_COUNT}",
+            "color": "e50914"
+          }
+          EOF
+
+          cat <<EOF > .github/traffic/clones.json
+          {
+            "schemaVersion": 1,
+            "label": "Clones",
+            "message": "${CLONES_COUNT}",
+            "color": "e50914"
+          }
+          EOF
+
+          cat <<EOF > .github/traffic/cloners.json
+          {
+            "schemaVersion": 1,
+            "label": "Unique Cloners",
+            "message": "${CLONERS_COUNT}",
+            "color": "e50914"
+          }
+          EOF
+
+      - name: Commit and Push Updated Stats
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/traffic/
+          git diff-index --quiet HEAD || (git commit -m "chore: update traffic stats badges [skip ci]" && git push)
