@@ -298,24 +298,30 @@ def agent_create(
             "AGENT_SNAKE_NAME": snake_name,
         }
 
-        target_dir.mkdir(parents=True, exist_ok=True)
-        tests_dir = target_dir / "tests"
-        tests_dir.mkdir(exist_ok=True)
+        import tempfile
+        import shutil
 
-        for item in template_dir.glob("*.template"):
-            base_name = item.stem  # e.g., agent.yaml, agent.py, README.md, test_agent.py
-            with open(item, "r", encoding="utf-8") as f:
-                content = f.read()
+        with tempfile.TemporaryDirectory(prefix="formicx_agent_") as tmp_dir_str:
+            tmp_dir = Path(tmp_dir_str)
+            tmp_tests_dir = tmp_dir / "tests"
+            tmp_tests_dir.mkdir(exist_ok=True)
 
-            rendered = Template(content).safe_substitute(substitutions)
+            for item in template_dir.glob("*.template"):
+                base_name = item.stem  # e.g., agent.yaml, agent.py, README.md, test_agent.py
+                with open(item, "r", encoding="utf-8") as f:
+                    content = f.read()
 
-            if base_name == "test_agent.py":
-                dest_file = tests_dir / base_name
-            else:
-                dest_file = target_dir / base_name
+                rendered = Template(content).safe_substitute(substitutions)
 
-            with open(dest_file, "w", encoding="utf-8") as f:
-                f.write(rendered)
+                if base_name == "test_agent.py":
+                    dest_file = tmp_tests_dir / base_name
+                else:
+                    dest_file = tmp_dir / base_name
+
+                with open(dest_file, "w", encoding="utf-8") as f:
+                    f.write(rendered)
+
+            shutil.move(str(tmp_dir), str(target_dir))
 
         typer.echo(f"Created Formicx agent project:\n")
         typer.echo(f"  {name}/")
