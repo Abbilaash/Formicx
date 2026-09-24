@@ -3,6 +3,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/formicx/"><img src="https://img.shields.io/pypi/v/formicx?color=e50914&style=flat-square" alt="PyPI Package"></a>
   <a href="https://github.com/Abbilaash/Formicx/blob/main/LICENSE"><img src="https://img.shields.io/github/license/Abbilaash/Formicx?color=e50914&style=flat-square" alt="License"></a>
   <a href="https://github.com/Abbilaash/Formicx"><img src="https://img.shields.io/badge/Open%20Source-%E2%9D%A4-e50914?style=flat-square" alt="Open Source"></a>
   <a href="https://hits.sh/github.com/Abbilaash/Formicx/"><img src="https://hits.sh/github.com/Abbilaash/Formicx/badge.svg?color=e50914&label=Views&style=flat-square" alt="Views"></a>
@@ -42,7 +43,20 @@ Formicx fills the architectural gap between high-level LLM agent frameworks (Lan
 
 Formicx requires **Python 3.11+**.
 
-Clone the repository and install Formicx in editable mode with development dependencies:
+Install Formicx directly from the official [PyPI Package Page](https://pypi.org/project/formicx/):
+
+```bash
+pip install formicx
+```
+
+Or using `uv`:
+
+```bash
+uv pip install formicx
+```
+
+#### Installing from Source (Development)
+Alternatively, clone the repository and install in editable mode with development dependencies:
 
 ```bash
 git clone https://github.com/Abbilaash/Formicx.git
@@ -50,7 +64,7 @@ cd Formicx
 pip install -e ".[dev]"
 ```
 
-This registers the global CLI executables `formicx` and `formicxd`.
+This registers the global CLI executables `formicx`, `formicxd`, and `formicx-mcp`.
 
 ### Starting the Daemon
 
